@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
 import Footer from '../../components/layout/Footer';
+import { TextReveal, FadeIn } from '../../components/common/TextReveal';
+import GlitchText from '../../components/common/GlitchText';
+import { motion } from 'framer-motion';
 
 const CountUp = ({ end, label }) => {
     const [count, setCount] = useState(0);
@@ -130,27 +133,30 @@ const Landing = () => {
                 <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
 
                     {/* Left Content */}
-                    <div className="relative z-10 space-y-8 animate-in slide-in-from-left duration-1000">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-brand-700 rounded-full text-sm font-bold border border-red-100 animate-pulse-ring cursor-default">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                            </span>
-                            URGENT: O+ Donors needed in your area
+                    {/* Left Content */}
+                    <div className="relative z-10 space-y-8">
+                        <FadeIn delay={0.2}>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-brand-700 rounded-full text-sm font-bold border border-red-100 cursor-default">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                                <GlitchText text="URGENT: O+ Donors needed in your area" />
+                            </div>
+                        </FadeIn>
+
+                        <div className="space-y-2">
+                            <TextReveal text="Saving lives is" className="text-4xl lg:text-7xl font-extrabold text-slate-900 leading-[1.1] tracking-tight" />
+                            <TextReveal text="in your blood." className="text-4xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400" delay={0.5} />
                         </div>
 
-                        <h1 className="text-4xl lg:text-7xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                            Saving lives is <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400 relative reveal-text bg-[length:200%_auto]">
-                                in your blood.
-                            </span>
-                        </h1>
+                        <FadeIn delay={0.8}>
+                            <p className="text-lg lg:text-xl text-slate-600 max-w-lg leading-relaxed">
+                                DonorLink connects hospitals, donors, and organizations in real-time. Smart matching, zero wastage, 100% transparent.
+                            </p>
+                        </FadeIn>
 
-                        <p className="text-lg lg:text-xl text-slate-600 max-w-lg leading-relaxed">
-                            DonorLink connects hospitals, donors, and organizations in real-time. Smart matching, zero wastage, 100% transparent.
-                        </p>
-
-                        <div className="flex flex-col gap-4 pt-4 w-full sm:w-auto">
+                        <FadeIn delay={1} className="flex flex-col gap-4 pt-4 w-full sm:w-auto">
                             <Link to="/login" className="w-full sm:w-auto">
                                 <Button className="h-14 px-8 text-lg shadow-brand-500/40 shadow-xl hover:shadow-2xl hover:-translate-y-1 w-full transition-all duration-300">
                                     Find a Donor <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -161,7 +167,7 @@ const Landing = () => {
                                     Register as Donor
                                 </Button>
                             </Link>
-                        </div>
+                        </FadeIn>
 
                         <div className="flex items-center gap-8 pt-8 border-t border-slate-100 text-slate-500">
                             <div className="flex -space-x-4">
@@ -233,7 +239,9 @@ const Landing = () => {
                             { val: 3200, label: 'Lives Saved' },
                             { val: 120, label: 'Active Camps' }
                         ].map((stat, i) => (
-                            <CountUp key={i} end={stat.val} label={stat.label} />
+                            <FadeIn key={i} delay={i * 0.1}>
+                                <CountUp end={stat.val} label={stat.label} />
+                            </FadeIn>
                         ))}
                     </div>
                 </div>
@@ -254,13 +262,15 @@ const Landing = () => {
                             { icon: Activity, title: 'Get Notified', desc: 'Receive real-time alerts for emergency requests or blood donation camps in your area.' },
                             { icon: Heart, title: 'Donate & Save', desc: 'Visit the hospital or camp. Donate blood, save a life, and earn a "Life Saver" badge.' },
                         ].map((step, i) => (
-                            <div key={i} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all hover:-translate-y-2 group">
-                                <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform group-hover:bg-brand-600 group-hover:text-white">
-                                    <step.icon size={32} />
+                            <FadeIn key={i} delay={0.2 + (i * 0.2)}>
+                                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all hover:-translate-y-2 group h-full">
+                                    <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform group-hover:bg-brand-600 group-hover:text-white">
+                                        <step.icon size={32} />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-3">{step.title}</h3>
+                                    <p className="text-slate-500 leading-relaxed">{step.desc}</p>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">{step.title}</h3>
-                                <p className="text-slate-500 leading-relaxed">{step.desc}</p>
-                            </div>
+                            </FadeIn>
                         ))}
                     </div>
                 </div>
