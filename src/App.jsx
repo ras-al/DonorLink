@@ -11,6 +11,7 @@ import CampManagement from './pages/dashboard/camps/CampManagement';
 import UserProfile from './pages/dashboard/profile/UserProfile';
 import Notifications from './pages/dashboard/Notifications';
 import Settings from './pages/dashboard/Settings';
+import Inventory from './pages/dashboard/Inventory';
 import Terms from './pages/public/Terms';
 import Privacy from './pages/public/Privacy';
 
@@ -41,6 +42,7 @@ function AppContent() {
             <Route index element={<DashboardHome />} />
             <Route path="find-donor" element={<FindDonor />} />
             <Route path="requests" element={<div className="p-10">Request History (Coming Soon)</div>} />
+            <Route path="inventory" element={<Inventory />} />
             <Route path="camps" element={<CampManagement />} />
             <Route path="requests/create" element={<CreateRequest />} />
             <Route path="profile" element={<UserProfile />} />

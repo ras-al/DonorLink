@@ -30,7 +30,7 @@ const DashboardLayout = () => {
             return [
                 ...common,
                 { label: 'Create Request', path: '/dashboard/requests/create', icon: Activity },
-                { label: 'Inventory', path: '/dashboard/inventory', icon: Activity }, // Pending
+                { label: 'Inventory', path: '/dashboard/inventory', icon: Activity },
             ];
         }
 
