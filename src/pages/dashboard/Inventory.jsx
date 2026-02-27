@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Minus, Droplets, Search, Filter } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import { useToast } from '../../context/ToastContext';
 
 const Inventory = () => {
     // Mock Inventory Data
@@ -14,7 +15,10 @@ const Inventory = () => {
         { type: 'AB-', count: 2, status: 'Critical' },
         { type: 'O+', count: 45, status: 'Excess' },
         { type: 'O-', count: 5, status: 'Low' },
+
     ]);
+
+    const { addToast } = useToast();
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -34,7 +38,9 @@ const Inventory = () => {
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" className="h-10"><Filter size={18} /> Filter</Button>
-                    <Button className="h-10"><Plus size={18} /> Add Stock</Button>
+                    <Button onClick={() => addToast('Stock added successfully!', 'success')}>
+                        Add Stock
+                    </Button>
                 </div>
             </div>
 

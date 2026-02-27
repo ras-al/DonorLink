@@ -68,7 +68,7 @@ const Footer = () => {
 
                 <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
                     <p>© 2026 DonorLink Foundation. All rights reserved.</p>
-                    <p className="flex items-center gap-1">Made with <Heart size={12} className="text-red-500 fill-red-500" /> for humanity.</p>
+                    <p className="flex items-center gap-1">Made by Team Attendance</p>
                 </div>
             </div>
         </footer>
