@@ -16,6 +16,7 @@ import Inventory from './pages/dashboard/Inventory';
 import Terms from './pages/public/Terms';
 import Privacy from './pages/public/Privacy';
 import { ToastProvider } from './context/ToastContext';
+import RequestHistory from './pages/dashboard/RequestHistory';
 
 function App() {
   return (
@@ -52,7 +53,7 @@ function AppContent() {
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
                 <Route path="find-donor" element={<FindDonor />} />
-                <Route path="requests" element={<div className="p-10">Request History (Coming Soon)</div>} />
+                <Route path="requests" element={<RequestHistory />} />
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="camps" element={<CampManagement />} />
                 <Route path="requests/create" element={<CreateRequest />} />
