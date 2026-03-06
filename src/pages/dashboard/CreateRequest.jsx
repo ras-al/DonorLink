@@ -1,18 +1,81 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Activity, AlertCircle, Clock, CheckCircle2, Search, MapPin, ChevronRight, User } from 'lucide-react';
 import Button from '../../components/common/Button';
+import { useToast } from '../../context/ToastContext';
 
 const CreateRequest = () => {
+    const navigate = useNavigate();
+    const { addToast } = useToast();
+
     const [step, setStep] = useState(1);
-    const [urgency, setUrgency] = useState('medium');
     const [isSearching, setIsSearching] = useState(false);
 
-    // Mock AI Matching State
-    const handleSearch = () => {
+    // Form State
+    const [patientName, setPatientName] = useState('');
+    const [age, setAge] = useState('');
+    const [admissionId, setAdmissionId] = useState('');
+    const [urgency, setUrgency] = useState('medium');
+    const [bloodGroup, setBloodGroup] = useState('');
+
+    // Handle the final submission to Django
+    const handleSearchAndSubmit = async () => {
+        if (!bloodGroup) {
+            addToast("Please select a blood group.", "error");
+            return;
+        }
+
         setStep(3);
         setIsSearching(true);
-        // Simulate AI processing time
-        setTimeout(() => setIsSearching(false), 3000);
+
+        try {
+            // 1. Get the auth token
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                addToast("You must be logged in to create a request.", "error");
+                navigate('/login');
+                return;
+            }
+
+            // 2. Prepare the payload matching Django's BloodRequest model
+            const payload = {
+                patient_name: patientName,
+                blood_group: bloodGroup,
+                urgency_level: urgency,
+                // For MVP, we auto-generate location and required date
+                location: "Current Hospital Location",
+                required_date: new Date().toISOString()
+            };
+
+            // 3. Send POST request to Django
+            const response = await fetch('http://127.0.0.1:8000/api/blood/requests/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // <--- IMPORTANT: Secure token
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Simulate AI matching delay for UX
+                setTimeout(() => {
+                    setIsSearching(false);
+                    addToast("Emergency request broadcasted successfully!", "success");
+                }, 2500);
+            } else {
+                setIsSearching(false);
+                setStep(2); // Go back if error
+                addToast(data.detail || "Failed to create request.", "error");
+            }
+
+        } catch (error) {
+            setIsSearching(false);
+            setStep(2);
+            addToast("Server error. Ensure Django is running.", "error");
+        }
     };
 
     return (
@@ -66,20 +129,23 @@ const CreateRequest = () => {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Patient Name</label>
-                                    <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. John Doe" />
+                                    <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. John Doe" />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Age</label>
-                                    <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. 34" />
+                                    <input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. 34" />
                                 </div>
                                 <div className="col-span-2 space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Hospital Admission ID</label>
-                                    <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. HOSP-2026-889" />
+                                    <input type="text" value={admissionId} onChange={(e) => setAdmissionId(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. HOSP-2026-889" />
                                 </div>
                             </div>
 
                             <div className="mt-8 flex justify-end">
-                                <Button onClick={() => setStep(2)}>Next Step <ChevronRight size={18} /></Button>
+                                <Button onClick={() => {
+                                    if (!patientName) return addToast("Enter patient name", "error");
+                                    setStep(2);
+                                }}>Next Step <ChevronRight size={18} /></Button>
                             </div>
                         </div>
                     )}
@@ -95,24 +161,13 @@ const CreateRequest = () => {
                             <div className="mb-8">
                                 <label className="text-sm font-medium text-slate-700 mb-3 block">Urgency Level</label>
                                 <div className="grid grid-cols-3 gap-4">
-                                    <button
-                                        onClick={() => setUrgency('low')}
-                                        className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'low' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 hover:border-slate-300'}`}
-                                    >
-                                        Low
-                                        <span className="block text-xs font-normal mt-1 text-slate-500">Scheduled Surgery</span>
+                                    <button onClick={() => setUrgency('low')} className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'low' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 hover:border-slate-300'}`}>
+                                        Low <span className="block text-xs font-normal mt-1 text-slate-500">Scheduled Surgery</span>
                                     </button>
-                                    <button
-                                        onClick={() => setUrgency('medium')}
-                                        className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'medium' ? 'border-amber-500 bg-amber-50 text-amber-700 font-bold' : 'border-slate-100 hover:border-slate-300'}`}
-                                    >
-                                        Medium
-                                        <span className="block text-xs font-normal mt-1 text-slate-500">Within 24 Hours</span>
+                                    <button onClick={() => setUrgency('medium')} className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'medium' ? 'border-amber-500 bg-amber-50 text-amber-700 font-bold' : 'border-slate-100 hover:border-slate-300'}`}>
+                                        Medium <span className="block text-xs font-normal mt-1 text-slate-500">Within 24 Hours</span>
                                     </button>
-                                    <button
-                                        onClick={() => setUrgency('critical')}
-                                        className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'critical' ? 'border-red-600 bg-red-50 text-red-700 font-bold ring-2 ring-red-500/20' : 'border-slate-100 hover:border-slate-300'}`}
-                                    >
+                                    <button onClick={() => setUrgency('critical')} className={`p-4 rounded-xl border-2 text-center transition-all ${urgency === 'critical' ? 'border-red-600 bg-red-50 text-red-700 font-bold ring-2 ring-red-500/20' : 'border-slate-100 hover:border-slate-300'}`}>
                                         <span className="flex items-center justify-center gap-2">CRITICAL <AlertCircle size={16} /></span>
                                         <span className="block text-xs font-normal mt-1 text-slate-500">Immediate Action</span>
                                     </button>
@@ -124,7 +179,11 @@ const CreateRequest = () => {
                                 <label className="text-sm font-medium text-slate-700 mb-3 block">Required Blood Group</label>
                                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
                                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
-                                        <button key={bg} className="aspect-square rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50 font-bold text-slate-700 focus:bg-brand-600 focus:text-white transition-all">
+                                        <button
+                                            key={bg}
+                                            onClick={() => setBloodGroup(bg)}
+                                            className={`aspect-square rounded-xl border-2 transition-all font-bold ${bloodGroup === bg ? 'border-brand-600 bg-brand-600 text-white shadow-lg shadow-brand-500/30' : 'border-slate-200 text-slate-700 hover:border-brand-400'}`}
+                                        >
                                             {bg}
                                         </button>
                                     ))}
@@ -133,7 +192,7 @@ const CreateRequest = () => {
 
                             <div className="flex justify-between mt-8">
                                 <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
-                                <Button onClick={handleSearch} variant={urgency === 'critical' ? 'primary' : 'primary'}>
+                                <Button onClick={handleSearchAndSubmit} variant={urgency === 'critical' ? 'primary' : 'primary'}>
                                     {urgency === 'critical' ? 'Broadcast Emergency' : 'Find Donors'}
                                 </Button>
                             </div>
@@ -155,44 +214,16 @@ const CreateRequest = () => {
                                         <h3 className="text-xl font-bold text-slate-900">AI is Analyzing Donor Database</h3>
                                         <p className="text-slate-500 mt-2">Filtering by Location, Trust Score, and Last Donation Date...</p>
                                     </div>
-                                    <div className="max-w-md mx-auto space-y-2">
-                                        <div className="flex justify-between text-xs text-slate-400 uppercase font-bold">
-                                            <span>Scanning Radius</span>
-                                            <span>5km / 10km</span>
-                                        </div>
-                                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-brand-500 w-2/3 animate-[pulse_1s_ease-in-out_infinite]"></div>
-                                        </div>
-                                    </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8">
+                                <div className="text-center py-8 animate-in zoom-in-95 duration-500">
                                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                                         <CheckCircle2 size={32} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-slate-900">8 Donors Identified</h3>
-                                    <p className="text-slate-500 mt-2 mb-8">Alerts have been queued for the top matches.</p>
+                                    <h3 className="text-2xl font-bold text-slate-900">Request Broadcasted!</h3>
+                                    <p className="text-slate-500 mt-2 mb-8">AI identified highly-rated {bloodGroup} donors nearby. Alerts have been pushed.</p>
 
-                                    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden text-left mb-6">
-                                        <div className="px-4 py-3 border-b border-slate-200 bg-slate-100 text-xs font-bold text-slate-500 uppercase">Top 3 AI Matches</div>
-                                        {[
-                                            { name: 'Nitin Mahajan', dist: '0.8km', score: 98 },
-                                            { name: 'Ankita Biswas', dist: '1.2km', score: 95 },
-                                            { name: 'Rahul Nair', dist: '2.5km', score: 92 }
-                                        ].map((d, i) => (
-                                            <div key={i} className="px-4 py-3 border-b border-slate-100 flex justify-between items-center last:border-0">
-                                                <div>
-                                                    <p className="font-bold text-slate-800">{d.name}</p>
-                                                    <p className="text-xs text-slate-500">{d.dist} away</p>
-                                                </div>
-                                                <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">
-                                                    {d.score}% Match
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <Button className="w-full" onClick={() => window.location.href = '/dashboard'}>Monitor Responses</Button>
+                                    <Button className="w-full" onClick={() => navigate('/dashboard/requests')}>Monitor Responses</Button>
                                 </div>
                             )}
                         </div>
@@ -205,15 +236,11 @@ const CreateRequest = () => {
                     <div className="bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
 
-                        <h4 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Inventory Status</h4>
+                        <h4 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Inventory Target</h4>
                         <div className="flex items-end gap-2 mb-4">
-                            <span className="text-4xl font-bold">A+</span>
-                            <span className="text-red-400 font-bold mb-1 text-sm">Low Stock</span>
+                            <span className="text-4xl font-bold">{bloodGroup || '-'}</span>
+                            <span className="text-brand-400 font-bold mb-1 text-sm">Requested</span>
                         </div>
-                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-red-500 w-[20%] h-full"></div>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-2">Only 2 units remaining in cold storage.</p>
                     </div>
 
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -223,14 +250,14 @@ const CreateRequest = () => {
                                 <div className="p-2 bg-brand-50 text-brand-600 rounded-lg"><Clock size={18} /></div>
                                 <div>
                                     <p className="text-xs text-slate-500">Est. Fulfillment Time</p>
-                                    <p className="font-bold text-slate-800">18 - 25 Mins</p>
+                                    <p className="font-bold text-slate-800">{urgency === 'critical' ? '10 - 15 Mins' : '1 - 2 Hours'}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-brand-50 text-brand-600 rounded-lg"><MapPin size={18} /></div>
                                 <div>
                                     <p className="text-xs text-slate-500">Donor Availability</p>
-                                    <p className="font-bold text-slate-800">High (12 Active)</p>
+                                    <p className="font-bold text-slate-800">High</p>
                                 </div>
                             </div>
                         </div>

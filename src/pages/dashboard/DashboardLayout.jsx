@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, ChevronDown } from 'lucide-react';
+// IMPORT FIX: Added 'History' icon here
+import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, ChevronDown, History } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
@@ -9,6 +10,7 @@ const DashboardLayout = () => {
     const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Dynamic Navigation based on Role
     // Dynamic Navigation based on Role
     const getNavItems = () => {
         const common = [
@@ -21,7 +23,6 @@ const DashboardLayout = () => {
             return [
                 ...common,
                 { label: 'Find Donors', path: '/dashboard/find-donor', icon: Map },
-                { label: 'My Requests', path: '/dashboard/requests', icon: Activity },
                 { label: 'Profile', path: '/dashboard/profile', icon: User },
             ];
         }
@@ -30,6 +31,7 @@ const DashboardLayout = () => {
             return [
                 ...common,
                 { label: 'Create Request', path: '/dashboard/requests/create', icon: Activity },
+                { label: 'Request Tracking', path: '/dashboard/requests', icon: History },
                 { label: 'Inventory', path: '/dashboard/inventory', icon: Activity },
             ];
         }

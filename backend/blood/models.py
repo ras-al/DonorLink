@@ -43,3 +43,21 @@ class AIAuditLog(models.Model):
 
     def __str__(self):
         return f"AI Audit for REQ-{self.blood_request.id}"
+
+class BloodInventory(models.Model):
+    BLOOD_GROUPS = [
+        ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'),
+        ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-'),
+    ]
+    
+    hospital = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inventory')
+    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUPS)
+    units_available = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # A hospital should only have one inventory record per blood group
+        unique_together = ('hospital', 'blood_group')
+
+    def __str__(self):
+        return f"{self.hospital.username} - {self.blood_group}: {self.units_available} units"

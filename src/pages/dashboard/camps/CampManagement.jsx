@@ -1,125 +1,153 @@
-import { useState } from 'react';
-import { Calendar, MapPin, Users, TrendingUp, Plus, Activity, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, MapPin, Users, Plus, Activity, Clock } from 'lucide-react';
 import Button from '../../../components/common/Button';
+import Input from '../../../components/common/Input';
+import { useToast } from '../../../context/ToastContext';
 
 const CampManagement = () => {
-    // Mock Data
-    const activeCamps = [
-        { id: 1, name: "TKM College Annual Drive", date: "Feb 26, 2026", location: "Kollam Campus", expected: 150, registered: 84, status: "Upcoming" },
-        { id: 2, name: "City Center Blood Drive", date: "Mar 10, 2026", location: "City Mall Arcade", expected: 300, registered: 45, status: "Planning" }
-    ];
+    const [camps, setCamps] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const { addToast } = useToast();
+
+    const [formData, setFormData] = useState({
+        name: '',
+        date: '',
+        location: ''
+    });
+
+    const fetchCamps = async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('http://127.0.0.1:8000/api/camps/list/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCamps(data);
+            }
+        } catch (error) {
+            addToast("Failed to fetch camps", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCamps();
+    }, []);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleCreateCamp = async (e) => {
+        e.preventDefault();
+        setIsCreating(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('http://127.0.0.1:8000/api/camps/list/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                addToast("Donation Camp created successfully!", "success");
+                setFormData({ name: '', date: '', location: '' });
+                fetchCamps(); // Refresh the list
+            } else {
+                addToast("Failed to create camp. Please check details.", "error");
+            }
+        } catch (error) {
+            addToast("Network error. Is Django running?", "error");
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Camp Management</h1>
-                    <p className="text-slate-500">Plan drives and predict donor turnout using AI.</p>
-                </div>
-                <Button className="h-10"><Plus size={18} /> Organize Camp</Button>
-            </div>
-
-            {/* Top AI Stats Widgets */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-brand-600 to-brand-800 p-6 rounded-2xl text-white shadow-lg shadow-brand-500/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                    <h3 className="text-brand-100 font-medium text-sm mb-4">AI Turnout Prediction</h3>
-                    <div className="flex items-end gap-3 mb-2">
-                        <span className="text-4xl font-bold">85%</span>
-                        <span className="text-brand-200 mb-1 flex items-center gap-1"><TrendingUp size={16} /> High Accuracy</span>
-                    </div>
-                    <p className="text-sm text-brand-100/80">Model predicts optimal turnout on weekends between 10 AM - 2 PM.</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Users size={20} /></div>
-                        <h3 className="text-slate-500 font-medium text-sm">Total Reach Potential</h3>
-                    </div>
-                    <span className="text-3xl font-bold text-slate-900 mt-2">12,450</span>
-                    <p className="text-xs text-green-600 mt-2 font-medium">+12% from last month in your region</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Activity size={20} /></div>
-                        <h3 className="text-slate-500 font-medium text-sm">Shortage Alerts</h3>
-                    </div>
-                    <span className="text-3xl font-bold text-slate-900 mt-2">O+, AB-</span>
-                    <p className="text-xs text-amber-600 mt-2 font-medium">Target these groups for upcoming drives</p>
+                    <p className="text-slate-500">Organize blood drives and view AI turnout predictions.</p>
                 </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* Left: Active Camps List */}
+                {/* LEFT: Create Camp Form */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <Plus size={20} className="text-brand-600" /> Schedule New Camp
+                    </h3>
+                    <form onSubmit={handleCreateCamp} className="space-y-4">
+                        <Input label="Camp Name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g. TKM College Annual Drive" required />
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-slate-700">Date</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" required />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-slate-700">Location Address</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                <textarea name="location" value={formData.location} onChange={handleChange} placeholder="Full address of the venue" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none resize-none" required></textarea>
+                            </div>
+                        </div>
+
+                        <Button type="submit" className="w-full mt-4" isLoading={isCreating}>Create Camp</Button>
+                    </form>
+                </div>
+
+                {/* RIGHT: List of Camps */}
                 <div className="lg:col-span-2 space-y-4">
-                    <h2 className="text-lg font-bold text-slate-800 mb-4">Your Campaigns</h2>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Your Scheduled Drives</h3>
 
-                    {activeCamps.map(camp => (
-                        <div key={camp.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-brand-200 transition-colors group">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-lg text-slate-900 group-hover:text-brand-600 transition-colors">{camp.name}</h3>
-                                    <div className="flex items-center gap-4 text-sm text-slate-500 mt-2">
-                                        <span className="flex items-center gap-1"><Calendar size={14} /> {camp.date}</span>
-                                        <span className="flex items-center gap-1"><MapPin size={14} /> {camp.location}</span>
+                    {isLoading ? (
+                        <div className="text-center py-12">
+                            <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        </div>
+                    ) : camps.length === 0 ? (
+                        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+                            <Calendar className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+                            <h3 className="text-lg font-medium text-slate-900">No camps scheduled</h3>
+                            <p className="text-slate-500 mt-1">Create your first blood drive using the form.</p>
+                        </div>
+                    ) : (
+                        camps.map(camp => (
+                            <div key={camp.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between gap-6 hover:border-brand-300 transition-colors">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <h4 className="font-bold text-lg text-slate-900">{camp.name}</h4>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${camp.status === 'upcoming' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                                            {camp.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 text-sm text-slate-600">
+                                        <span className="flex items-center gap-2"><Calendar size={16} className="text-slate-400" /> {camp.date}</span>
+                                        <span className="flex items-center gap-2"><MapPin size={16} className="text-slate-400" /> {camp.location}</span>
                                     </div>
                                 </div>
-                                <span className="px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-full border border-brand-100">
-                                    {camp.status}
-                                </span>
-                            </div>
 
-                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <div className="flex-1 max-w-xs">
-                                    <div className="flex justify-between text-xs mb-1 font-medium">
-                                        <span className="text-slate-500">Registrations</span>
-                                        <span className="text-slate-900">{camp.registered} / {camp.expected} (AI Target)</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-brand-500 rounded-full" style={{ width: `${(camp.registered / camp.expected) * 100}%` }}></div>
-                                    </div>
+                                {/* AI Prediction Box */}
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col items-center justify-center min-w-[140px] text-center">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1"><Activity size={12} /> AI Prediction</p>
+                                    <span className="text-3xl font-black text-brand-600">{camp.expected_donors}</span>
+                                    <p className="text-xs font-medium text-slate-500 mt-1">Expected Donors</p>
                                 </div>
-                                <Button variant="outline" size="sm" className="ml-4">Manage</Button>
                             </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Right: AI Drive Planner Tool */}
-                <div className="bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden flex flex-col h-full">
-                    <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/-122.42,37.78,12,0,0/600x600?access_token=placeholder')] bg-cover opacity-20"></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent"></div>
-
-                    <div className="relative z-10 flex-1 flex flex-col">
-                        <div className="flex items-center gap-2 text-brand-400 mb-6">
-                            <Activity className="animate-pulse" size={20} />
-                            <span className="font-bold uppercase tracking-wider text-xs">AI Heatmap Engine</span>
-                        </div>
-
-                        <h3 className="text-xl font-bold mb-2">Where to host next?</h3>
-                        <p className="text-slate-400 text-sm mb-6">Our AI constantly analyzes donor density and hospital shortages to recommend camp locations.</p>
-
-                        <div className="space-y-3 mt-auto">
-                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 cursor-pointer hover:bg-white/20 transition-colors">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="font-bold text-white">Technopark Area</span>
-                                    <span className="text-green-400 text-xs font-bold">92% Match</span>
-                                </div>
-                                <p className="text-xs text-slate-300">High density of eligible young donors. Low recent activity.</p>
-                            </div>
-                            <div className="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="font-bold text-white">Railway Station East</span>
-                                    <span className="text-green-400 text-xs font-bold">88% Match</span>
-                                </div>
-                                <p className="text-xs text-slate-400">High foot traffic, suitable for weekend mobile drives.</p>
-                            </div>
-                        </div>
-                    </div>
+                        ))
+                    )}
                 </div>
 
             </div>

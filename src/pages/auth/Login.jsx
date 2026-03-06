@@ -1,34 +1,91 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Activity, Building2, ChevronLeft } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Activity, Building2 } from 'lucide-react';
 import Button from '../../components/common/Button';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 const Login = () => {
     const navigate = useNavigate();
-    const [role, setRole] = useState('donor'); // 'donor' | 'hospital'
+    const { login } = useAuth();
+    const { addToast } = useToast();
+
+    // Note: The role switcher here is mostly for UX (showing the right placeholder).
+    // The actual role is determined by the backend upon successful login.
+    const [displayRole, setDisplayRole] = useState('donor');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
+
+        try {
+            // 1. Get the JWT Tokens from Django
+            const loginResponse = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: formData.email,
+                    password: formData.password
+                }),
+            });
+
+            const tokenData = await loginResponse.json();
+
+            if (loginResponse.ok) {
+                // Save tokens locally
+                localStorage.setItem('access_token', tokenData.access);
+                localStorage.setItem('refresh_token', tokenData.refresh);
+
+                // 2. Fetch the User's Profile to get their actual Role
+                const userResponse = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.access}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+
+                    // Update global auth state with the REAL role from the database
+                    login(userData.role);
+
+                    addToast('Logged in successfully!', 'success');
+                    navigate('/dashboard');
+                } else {
+                    addToast('Failed to fetch user profile.', 'error');
+                }
+
+            } else {
+                addToast(tokenData.detail || 'Invalid email or password.', 'error');
+            }
+        } catch (error) {
+            addToast('Network error. Is the server running?', 'error');
+        } finally {
             setIsLoading(false);
-            navigate('/dashboard');
-        }, 1500);
+        }
     };
 
     return (
         <div className="min-h-screen flex bg-white">
-
             {/* LEFT: Branding Section */}
             <div className="hidden lg:flex w-1/2 bg-brand-900 relative overflow-hidden items-center justify-center p-12 text-white">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
                 <div className="relative z-10 space-y-6 max-w-lg">
                     <h1 className="text-5xl font-bold leading-tight">Every drop creates a ripple of life.</h1>
-                    <p className="text-brand-100 text-lg">Join the network of 12,000+ heroes and hospitals saving lives in real-time.</p>
+                    <p className="text-brand-100 text-lg">Join the network of heroes and hospitals saving lives in real-time.</p>
 
-                    {/* Trust Stats */}
                     <div className="grid grid-cols-2 gap-6 pt-6">
                         <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20">
                             <p className="text-3xl font-bold">15m</p>
@@ -43,16 +100,7 @@ const Login = () => {
             </div>
 
             {/* RIGHT: Form Section */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 relative">
-
-                {/* Go Back Button */}
-                <button
-                    onClick={() => navigate('/')}
-                    className="absolute top-8 left-8 flex items-center gap-2 text-slate-500 hover:text-brand-600 transition-colors font-medium"
-                >
-                    <ChevronLeft size={20} /> Back to Home
-                </button>
-
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24">
                 <div className="w-full max-w-md space-y-8">
 
                     <div className="text-center lg:text-left">
@@ -60,17 +108,18 @@ const Login = () => {
                         <p className="text-slate-500 mt-2">Please enter your details to sign in.</p>
                     </div>
 
-                    {/* Role Switcher */}
                     <div className="bg-slate-100 p-1 rounded-xl flex">
                         <button
-                            onClick={() => setRole('donor')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${role === 'donor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            type="button"
+                            onClick={() => setDisplayRole('donor')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${displayRole === 'donor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             <Activity size={18} /> Donor
                         </button>
                         <button
-                            onClick={() => setRole('hospital')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${role === 'hospital' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            type="button"
+                            onClick={() => setDisplayRole('hospital')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${displayRole === 'hospital' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             <Building2 size={18} /> Hospital / Org
                         </button>
@@ -83,7 +132,10 @@ const Login = () => {
                                 <Mail className="absolute left-3 top-3.5 text-slate-400" size={20} />
                                 <input
                                     type="email"
-                                    placeholder={role === 'donor' ? "alex@example.com" : "admin@hospital.com"}
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder={displayRole === 'donor' ? "alex@example.com" : "admin@hospital.com"}
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                                     required
                                 />
@@ -96,6 +148,9 @@ const Login = () => {
                                 <Lock className="absolute left-3 top-3.5 text-slate-400" size={20} />
                                 <input
                                     type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
                                     placeholder="••••••••"
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                                     required

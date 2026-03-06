@@ -11,31 +11,91 @@ const Register = () => {
     const { login } = useAuth();
     const { addToast } = useToast();
 
+    // UI State
     const [step, setStep] = useState(1);
     const [role, setRole] = useState('donor'); // 'donor' | 'hospital' | 'organization'
     const [isLoading, setIsLoading] = useState(false);
+
+    // Form Data State (This fixes the TypeError!)
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        password: '',
+        bloodGroup: '',
+        dateOfBirth: '',
+        weight: '',
+        gender: '',
+        phone: '',
+        address: '',
+        orgName: '',
+        registrationId: ''
+    });
+
+    // Handle input changes
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleNext = (e) => {
         e.preventDefault();
         setStep(step + 1);
     };
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
+
+        // Build the payload mapping our React State to the Django API expectations
+        const payload = {
+            role: role,
+            email: formData.email,
+            password: formData.password,
+            phone: formData.phone,
+            address: formData.address,
+        };
+
+        if (role === 'donor') {
+            payload.blood_group = formData.bloodGroup;
+            payload.date_of_birth = formData.dateOfBirth;
+            payload.weight = formData.weight;
+            payload.gender = formData.gender;
+        } else {
+            payload.organization_name = formData.orgName;
+            payload.registration_id = formData.registrationId;
+        }
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                addToast('Registration successful! Welcome to DonorLink.', 'success');
+                login(role); // Auto-login for demo purposes
+                navigate('/dashboard');
+            } else {
+                // Display the first error returned by Django
+                const errorMsg = typeof data === 'object' ? Object.values(data)[0] : data.error;
+                addToast(errorMsg || 'Registration failed.', 'error');
+            }
+        } catch (error) {
+            addToast('Server connection failed. Is Django running?', 'error');
+        } finally {
             setIsLoading(false);
-            addToast('Registration successful! Welcome to DonorLink.', 'success');
-            login(role); // Auto-login into the selected role
-            navigate('/dashboard');
-        }, 1500);
+        }
     };
 
     return (
         <div className="min-h-screen flex bg-white font-sans text-slate-900">
 
-            {/* LEFT: Requirements & Branding Section (Your original design) */}
+            {/* LEFT: Requirements & Branding Section */}
             <div className="hidden lg:flex w-1/3 bg-slate-900 relative overflow-hidden flex-col justify-between p-12 text-white">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10"></div>
 
@@ -123,19 +183,19 @@ const Register = () => {
                         {step === 1 && (
                             <div className="bg-slate-100 p-1 rounded-xl flex animate-in fade-in zoom-in-95 duration-200">
                                 <button
-                                    onClick={() => setRole('donor')}
+                                    onClick={() => { setRole('donor'); setStep(1); }}
                                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${role === 'donor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <User size={18} /> Donor
                                 </button>
                                 <button
-                                    onClick={() => setRole('hospital')}
+                                    onClick={() => { setRole('hospital'); setStep(1); }}
                                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${role === 'hospital' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <Building2 size={18} /> Hospital
                                 </button>
                                 <button
-                                    onClick={() => setRole('organization')}
+                                    onClick={() => { setRole('organization'); setStep(1); }}
                                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${role === 'organization' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <Activity size={18} /> Org/NGO
@@ -151,9 +211,9 @@ const Register = () => {
                             {/* STEP 1: CREDENTIALS */}
                             {step === 1 && (
                                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-                                    <Input label="Full Name" icon={User} placeholder="John Doe" required />
-                                    <Input label="Email Address" type="email" icon={Mail} placeholder="john@example.com" required />
-                                    <Input label="Password" type="password" icon={Lock} placeholder="••••••••" required />
+                                    <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} icon={User} placeholder="John Doe" required />
+                                    <Input label="Email Address" type="email" name="email" value={formData.email} onChange={handleChange} icon={Mail} placeholder="john@example.com" required />
+                                    <Input label="Password" type="password" name="password" value={formData.password} onChange={handleChange} icon={Lock} placeholder="••••••••" required />
                                 </div>
                             )}
 
@@ -164,7 +224,7 @@ const Register = () => {
                                         <label className="text-sm font-medium text-slate-700">Blood Group</label>
                                         <div className="relative">
                                             <Droplet className="absolute left-3 top-3.5 text-red-500" size={18} />
-                                            <select className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none cursor-pointer" required>
+                                            <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none cursor-pointer" required>
                                                 <option value="">Select Blood Group</option>
                                                 <option value="A+">A+</option>
                                                 <option value="A-">A-</option>
@@ -183,20 +243,20 @@ const Register = () => {
                                             <label className="text-sm font-medium text-slate-700">Date of Birth</label>
                                             <div className="relative">
                                                 <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                                <input type="date" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" required />
+                                                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" required />
                                             </div>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-sm font-medium text-slate-700">Weight (kg)</label>
                                             <div className="relative">
                                                 <Weight className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                                <input type="number" min="50" placeholder="e.g. 65" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" required />
+                                                <input type="number" name="weight" value={formData.weight} onChange={handleChange} min="50" placeholder="e.g. 65" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" required />
                                             </div>
                                         </div>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-sm font-medium text-slate-700">Gender</label>
-                                        <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" required>
+                                        <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" required>
                                             <option value="">Select Gender</option>
                                             <option value="male">Male</option>
                                             <option value="female">Female</option>
@@ -209,12 +269,12 @@ const Register = () => {
                             {/* STEP 3: LOCATION & SUBMIT */}
                             {step === 3 && (
                                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-                                    <Input label="Phone Number" type="tel" icon={Phone} placeholder="+91 98765 43210" required />
+                                    <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="+91 98765 43210" required />
                                     <div className="space-y-1">
                                         <label className="text-sm font-medium text-slate-700">Address / City</label>
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                            <textarea placeholder="e.g. 123 Main St, Kollam" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
+                                            <textarea name="address" value={formData.address} onChange={handleChange} placeholder="e.g. 123 Main St, Kollam" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
                                         </div>
                                     </div>
 
@@ -242,22 +302,22 @@ const Register = () => {
                     {/* HOSPITAL / ORGANIZATION FORM (Single Step) */}
                     {(role === 'hospital' || role === 'organization') && (
                         <form onSubmit={handleRegister} className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-                            <Input label={`${role === 'hospital' ? 'Hospital' : 'Organization'} Name`} icon={Building2} placeholder={`e.g. ${role === 'hospital' ? 'City General Hospital' : 'NSS Unit 174'}`} required />
+                            <Input label={`${role === 'hospital' ? 'Hospital' : 'Organization'} Name`} name="orgName" value={formData.orgName} onChange={handleChange} icon={Building2} placeholder={`e.g. ${role === 'hospital' ? 'City General Hospital' : 'NSS Unit 174'}`} required />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input label="Official Email" type="email" icon={Mail} placeholder="admin@example.com" required />
-                                <Input label="Phone Number" type="tel" icon={Phone} placeholder="+91 98765 43210" required />
+                                <Input label="Official Email" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="admin@example.com" required />
+                                <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="+91 98765 43210" required />
                             </div>
-                            <Input label="Registration / License ID" icon={ShieldCheck} placeholder="Govt. Registration Number" required />
+                            <Input label="Registration / License ID" name="registrationId" value={formData.registrationId} onChange={handleChange} icon={ShieldCheck} placeholder="Govt. Registration Number" required />
 
                             <div className="space-y-1">
                                 <label className="text-sm font-medium text-slate-700">Full Address</label>
                                 <div className="relative">
                                     <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                    <textarea placeholder="Complete institutional address" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
+                                    <textarea name="address" value={formData.address} onChange={handleChange} placeholder="Complete institutional address" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
                                 </div>
                             </div>
 
-                            <Input label="Create Password" type="password" icon={Lock} placeholder="••••••••" required />
+                            <Input label="Create Password" name="password" value={formData.password} onChange={handleChange} type="password" icon={Lock} placeholder="••••••••" required />
 
                             <Button type="submit" className="w-full mt-6" isLoading={isLoading}>
                                 Register {role === 'hospital' ? 'Hospital' : 'Organization'} <ArrowRight size={18} />
