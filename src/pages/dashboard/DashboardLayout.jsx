@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, History, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, History, ShieldAlert, LayoutList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
@@ -12,7 +12,7 @@ const DashboardLayout = () => {
     // Dynamic Navigation based on REAL Role
     const getNavItems = () => {
         const common = [
-            { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
+            { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         ];
 
         if (!user) return common;
@@ -46,6 +46,7 @@ const DashboardLayout = () => {
         if (user.role === 'admin') {
             return [
                 ...common,
+                { label: 'Overview', path: '/dashboard/admin-overview', icon: LayoutList },
                 { label: 'System Audit', path: '/dashboard/audit', icon: ShieldAlert },
                 { label: 'User Management', path: '/dashboard/users', icon: Users },
             ];

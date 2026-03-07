@@ -19,6 +19,7 @@ import { ToastProvider } from './context/ToastContext';
 import RequestHistory from './pages/dashboard/RequestHistory';
 import SystemAudit from './pages/dashboard/admin/SystemAudit';
 import UserManagement from './pages/dashboard/admin/UserManagement';
+import AdminOverview from './pages/dashboard/admin/AdminOverview';
 
 function App() {
   return (
@@ -66,6 +67,7 @@ function AppContent() {
                 {/* NEW: Admin Routes */}
                 <Route path="audit" element={<SystemAudit />} />
                 <Route path="users" element={<UserManagement />} />
+                <Route path="admin-overview" element={<AdminOverview />} />
               </Route>
             </Routes>
           </motion.div>

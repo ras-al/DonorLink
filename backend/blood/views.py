@@ -136,6 +136,24 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'Request accepted successfully!'}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        blood_request = self.get_object()
+
+        # Only the hospital that owns this request can update it
+        if request.user.role != 'hospital' or blood_request.hospital != request.user:
+            return Response({'detail': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+
+        new_status = request.data.get('status')
+        valid_statuses = ['pending', 'matching', 'fulfilled', 'expired']
+        if new_status not in valid_statuses:
+            return Response({'detail': f'Invalid status. Choose from: {valid_statuses}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        blood_request.status = new_status
+        blood_request.save()
+        return Response({'detail': f'Status updated to {new_status}.', 'status': new_status}, status=status.HTTP_200_OK)
+
+
     @action(detail=True, methods=['post'])
     def report_noshow(self, request, pk=None):
         blood_request = self.get_object()
@@ -229,3 +247,76 @@ class SystemAuditLogsView(APIView):
         # Sort feed descending
         feed.sort(key=lambda x: x['timestamp'], reverse=True)
         return Response(feed, status=status.HTTP_200_OK)
+
+
+class AdminOverviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+        from users.models import DonorProfile, InstitutionalProfile
+        from camps.models import DonationCamp
+
+        # --- Donors ---
+        donors = DonorProfile.objects.select_related('user').all()
+        donor_list = [{
+            'id': d.user.id,
+            'name': f"{d.user.first_name} {d.user.last_name}".strip() or d.user.email,
+            'email': d.user.email,
+            'blood_group': d.blood_group,
+            'trust_score': d.trust_score,
+            'is_available': d.is_available,
+            'address': d.user.address or '',
+            'phone': d.user.phone or '',
+            'last_donation_date': str(d.last_donation_date) if d.last_donation_date else None,
+        } for d in donors]
+
+        # --- Hospitals ---
+        hospitals = User.objects.filter(role='hospital').prefetch_related('institutional_profile')
+        hospital_list = [{
+            'id': h.id,
+            'name': h.institutional_profile.organization_name if hasattr(h, 'institutional_profile') else h.email,
+            'email': h.email,
+            'phone': h.phone or '',
+            'address': h.address or '',
+            'reg_id': h.institutional_profile.registration_id if hasattr(h, 'institutional_profile') else '',
+            'is_active': h.is_active,
+        } for h in hospitals]
+
+        # --- Active Blood Campaigns (pending requests) ---
+        active_requests = BloodRequest.objects.filter(
+            status__in=['pending', 'matching', 'fulfilled']
+        ).select_related('hospital').order_by('-created_at')[:50]
+        campaign_list = [{
+            'id': r.id,
+            'blood_group': r.blood_group,
+            'urgency_level': r.urgency_level,
+            'status': r.status,
+            'location': r.location or '',
+            'patient_name': r.patient_name or '',
+            'hospital_name': r.hospital.institutional_profile.organization_name
+                if hasattr(r.hospital, 'institutional_profile') else r.hospital.email,
+            'created_at': str(r.created_at),
+        } for r in active_requests]
+
+        # --- Camps ---
+        camps = DonationCamp.objects.select_related('organization').all().order_by('-date')[:50]
+        camp_list = [{
+            'id': c.id,
+            'name': c.name,
+            'date': str(c.date),
+            'location': c.location or '',
+            'status': c.status,
+            'expected_donors': c.expected_donors,
+            'org_name': c.organization.institutional_profile.organization_name
+                if hasattr(c.organization, 'institutional_profile') else c.organization.email,
+        } for c in camps]
+
+        return Response({
+            'donors': donor_list,
+            'hospitals': hospital_list,
+            'campaigns': campaign_list,
+            'camps': camp_list,
+        }, status=status.HTTP_200_OK)

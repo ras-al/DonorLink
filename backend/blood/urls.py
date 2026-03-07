@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BloodRequestViewSet, BloodInventoryViewSet, DashboardAnalyticsView, SystemAuditLogsView, PublicStatsView
+from .views import BloodRequestViewSet, BloodInventoryViewSet, DashboardAnalyticsView, SystemAuditLogsView, PublicStatsView, AdminOverviewView
 
 router = DefaultRouter()
 router.register(r'requests', BloodRequestViewSet, basename='blood-request')
@@ -10,5 +10,6 @@ urlpatterns = [
     path('analytics/', DashboardAnalyticsView.as_view(), name='dashboard-analytics'),
     path('public-stats/', PublicStatsView.as_view(), name='public-stats'),
     path('audit/', SystemAuditLogsView.as_view(), name='system-audit'),
+    path('admin-overview/', AdminOverviewView.as_view(), name='admin-overview'),
     path('', include(router.urls)),
 ]

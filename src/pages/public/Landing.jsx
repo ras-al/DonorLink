@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import Footer from '../../components/layout/Footer';
 import { TextReveal, FadeIn } from '../../components/common/TextReveal';
 import GlitchText from '../../components/common/GlitchText';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 
 const CountUp = ({ end, label }) => {
     const [count, setCount] = useState(0);
@@ -57,6 +57,99 @@ const CountUp = ({ end, label }) => {
     );
 };
 
+// --- NEW 3D COMPONENTS ---
+const TiltCard = ({ children, className = "" }) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 });
+    const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 });
+
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+    const handleMouseMove = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+        x.set(xPct);
+        y.set(yPct);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            style={{ perspective: 1000 }}
+            className={`relative ${className}`}
+        >
+            <motion.div
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                    rotateX,
+                    rotateY,
+                    transformStyle: "preserve-3d",
+                }}
+                className="w-full h-full rounded-3xl"
+            >
+                {children}
+            </motion.div>
+        </motion.div>
+    );
+};
+
+const Floating3DElement = ({ delay = 0, duration = 8, className, children }) => (
+    <motion.div
+        animate={{
+            y: [-20, 20, -20],
+            rotateX: [0, 45, 0],
+            rotateY: [0, 45, 0],
+        }}
+        transition={{
+            duration: duration,
+            delay: delay,
+            repeat: Infinity,
+            ease: "easeInOut"
+        }}
+        className={`absolute shadow-xl flex items-center justify-center ${className}`}
+        style={{ transformStyle: "preserve-3d", zIndex: 0 }}
+    >
+        {children}
+    </motion.div>
+);
+
+const WarpSpeed = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center mix-blend-screen z-0">
+        {[...Array(60)].map((_, i) => {
+            const angle = Math.random() * 360;
+            return (
+                <motion.div
+                    key={i}
+                    className="absolute h-[2px] bg-gradient-to-r from-transparent via-brand-500 to-transparent origin-left rounded-full"
+                    style={{ rotate: angle, width: `${100 + Math.random() * 300}px` }}
+                    initial={{ opacity: 0, x: 50, scaleX: 0 }}
+                    animate={{ opacity: [0, 1, 0.5, 0], x: [50, 1500, 2000], scaleX: [0, 1, 3] }}
+                    transition={{
+                        duration: 0.6 + Math.random(),
+                        repeat: Infinity,
+                        delay: Math.random() * 2,
+                        ease: "easeIn"
+                    }}
+                />
+            );
+        })}
+    </div>
+);
+// -------------------------
+
 const Landing = () => {
     const [showIntro, setShowIntro] = useState(true);
     const [stats, setStats] = useState({
@@ -83,29 +176,142 @@ const Landing = () => {
     }, []);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowIntro(false), 1200);
+        // Wait longer for the cinematic 3D intro to finish
+        const timer = setTimeout(() => setShowIntro(false), 2500);
         return () => clearTimeout(timer);
     }, []);
 
-    if (showIntro) {
-        return (
-            <div className="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center animate-fade-out-up delay-[800ms] pointer-events-none">
-                <div className="text-center">
-                    <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-500/50 animate-bounce overflow-hidden bg-white">
-                        <img src="/logo.png" alt="DonorLink Logo" className="w-full h-full object-cover" />
-                    </div>
-                    <h1 className="text-4xl font-bold text-white tracking-tight animate-pulse">DonorLink</h1>
-                    <p className="text-brand-200 mt-2 font-medium">Connecting Hearts, Saving Lives</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-white selection:bg-brand-100 selection:text-brand-900 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-white selection:bg-brand-100 selection:text-brand-900">
+
+            <AnimatePresence>
+                {showIntro && (
+                    <motion.div
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0, filter: "blur(20px)", scale: 1.2 }}
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} // Sharp ease-out for futuristic feel
+                        className="fixed inset-0 bg-[#020617] z-[100] flex flex-col items-center justify-center overflow-hidden"
+                        style={{ perspective: 1200 }}
+                    >
+                        {/* Futuristic Grid Background */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none z-0"></div>
+
+                        {/* NEW WOW EFFECTS */}
+                        <WarpSpeed />
+                        <motion.div
+                            initial={{ scale: 0, opacity: 1, borderWidth: "50px" }}
+                            animate={{ scale: 40, opacity: 0, borderWidth: "1px" }}
+                            transition={{ duration: 1.5, ease: "easeOut", delay: 0.1 }}
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-brand-500 pointer-events-none mix-blend-screen z-0"
+                        />
+                        {/* ---------------- */}
+
+                        {/* Orbiting Tech Rings */}
+                        <motion.div
+                            animate={{ rotateZ: 360, rotateX: [60, 60], rotateY: [0, 360] }}
+                            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                            className="absolute w-[800px] h-[800px] border-[2px] border-brand-500/10 rounded-full"
+                            style={{ transformStyle: "preserve-3d" }}
+                        />
+                        <motion.div
+                            animate={{ rotateZ: -360, rotateX: [70, 70], rotateY: [360, 0] }}
+                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            className="absolute w-[600px] h-[600px] border-[1px] border-red-500/20 rounded-full border-dashed"
+                            style={{ transformStyle: "preserve-3d" }}
+                        />
+
+                        {/* Glowing core */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-600/20 rounded-full blur-[100px] pointer-events-none"></div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-600/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+                        {/* Central Holographic Logo Sequence */}
+                        <motion.div
+                            initial={{ rotateX: 60, scale: 0.5, y: 100, opacity: 0 }}
+                            animate={{ rotateX: 0, scale: 1, y: 0, opacity: 1 }}
+                            exit={{ rotateX: -60, scale: 0.8, y: -100, opacity: 0 }}
+                            transition={{ duration: 1.2, type: "spring", bounce: 0.5 }}
+                            className="text-center relative z-10 flex flex-col items-center"
+                            style={{ transformStyle: "preserve-3d" }}
+                        >
+                            <motion.div
+                                className="relative w-36 h-36 rounded-[2rem] flex items-center justify-center mb-10 overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_0_80px_rgba(220,38,38,0.25)]"
+                                animate={{
+                                    y: [0, -15, 0],
+                                    rotateY: [0, 10, -10, 0]
+                                }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                {/* Holographic scanline effect inside the logo container */}
+                                <motion.div
+                                    animate={{ top: ['-100%', '200%'] }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                                    className="absolute left-0 w-full h-8 bg-gradient-to-b from-transparent via-brand-400/30 to-transparent z-20 pointer-events-none mix-blend-overlay"
+                                />
+
+                                <img src="/logo.png" alt="DonorLink Logo" className="w-24 h-24 object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+
+                                {/* Inner glow */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-brand-600/20 to-transparent"></div>
+                            </motion.div>
+
+                            <motion.div className="flex flex-col items-center">
+                                <motion.h1
+                                    initial={{ opacity: 0, filter: "blur(20px)", y: 60, scale: 0.5 }}
+                                    animate={{ opacity: 1, filter: "blur(0px)", y: 0, scale: 1 }}
+                                    transition={{ delay: 0.5, duration: 1, type: "spring", bounce: 0.6 }}
+                                    className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-red-200 to-red-400 tracking-tighter drop-shadow-[0_0_25px_rgba(220,38,38,0.7)]"
+                                >
+                                    DONOR<span className="text-brand-500">LINK</span>
+                                </motion.h1>
+
+                                <motion.div
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: "120%" }}
+                                    transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
+                                    className="h-[2px] bg-gradient-to-r from-transparent via-brand-500 to-transparent mt-4 mb-4 w-full max-w-[300px] shadow-[0_0_15px_rgba(220,38,38,1)]"
+                                />
+
+                                <motion.p
+                                    initial={{ opacity: 0, filter: "blur(5px)" }}
+                                    animate={{ opacity: [0, 1, 0.4, 1], filter: "blur(0px)", x: [-5, 5, -2, 0] }}
+                                    transition={{ delay: 1.2, duration: 0.6 }}
+                                    className="text-brand-300 font-mono tracking-[0.4em] uppercase text-xs font-bold drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                >
+                                    Sys. Initialized // Match Engine Online
+                                </motion.p>
+                            </motion.div>
+                        </motion.div>
+
+                        {/* Floating Tech Elements */}
+                        <Floating3DElement delay={0.2} duration={5} className="top-[20%] left-[15%]">
+                            <motion.div
+                                animate={{ boxShadow: ["0 0 20px rgba(239,68,68,0.2)", "0 0 60px rgba(239,68,68,0.8)", "0 0 20px rgba(239,68,68,0.2)"] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="w-20 h-20 rounded-xl border border-red-500/50 bg-red-500/10 backdrop-blur-md flex items-center justify-center transform rotate-12"
+                            >
+                                <Activity size={32} className="text-red-400" />
+                            </motion.div>
+                        </Floating3DElement>
+                        <Floating3DElement delay={1} duration={6} className="bottom-[25%] right-[15%]">
+                            <motion.div
+                                animate={{ boxShadow: ["0 0 20px rgba(220,38,38,0.2)", "0 0 60px rgba(220,38,38,0.8)", "0 0 20px rgba(220,38,38,0.2)"] }}
+                                transition={{ duration: 2.5, repeat: Infinity, delay: 1 }}
+                                className="w-24 h-24 rounded-full border border-brand-500/50 bg-brand-500/10 backdrop-blur-md flex items-center justify-center transform -rotate-12"
+                            >
+                                <ShieldCheck size={36} className="text-brand-400" />
+                            </motion.div>
+                        </Floating3DElement>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Navigation */}
-            <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+            <motion.nav
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: showIntro ? -100 : 0, opacity: showIntro ? 0 : 1 }}
+                transition={{ duration: 0.8, delay: showIntro ? 0 : 0.5, ease: "easeOut" }}
+                className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100"
+            >
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-brand-600 font-bold text-2xl tracking-tight">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform hover:rotate-12 hover:scale-110 overflow-hidden bg-white">
@@ -148,10 +354,14 @@ const Landing = () => {
                         </Link>
                     </div>
                 </div>
-            </nav>
+            </motion.nav>
 
-            {/* Hero Section */}
-            <header className="relative pt-20 pb-32 overflow-hidden">
+            <motion.header
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: showIntro ? 0 : 1, scale: showIntro ? 0.95 : 1 }}
+                transition={{ duration: 1, delay: showIntro ? 0 : 0.8 }}
+                className="relative pt-20 pb-32 overflow-hidden"
+            >
                 <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
 
                     {/* Left Content */}
@@ -207,52 +417,81 @@ const Landing = () => {
                         )}
                     </div>
 
-                    {/* Right Visuals */}
-                    <div className="relative hidden md:block animate-in slide-in-from-right duration-1000 delay-200">
-                        {/* Background Blob Animation */}
-                        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float"></div>
-                        <div className="absolute top-0 right-40 w-[500px] h-[500px] bg-purple-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: '2s' }}></div>
+                    {/* Right Visuals (3D Animated) */}
+                    <div className="relative hidden md:block w-full h-full min-h-[500px]">
+                        {/* 3D Floating Badges Background */}
+                        <Floating3DElement delay={0} duration={6} className="top-10 -right-10 w-20 h-20 bg-brand-500 rounded-3xl rotate-12 backdrop-blur-md bg-opacity-90">
+                            <Droplets size={36} className="text-white" />
+                        </Floating3DElement>
+                        <Floating3DElement delay={2} duration={7} className="bottom-20 -left-12 w-16 h-16 bg-red-500 rounded-2xl -rotate-12 backdrop-blur-md bg-opacity-90">
+                            <Heart size={28} className="text-white fill-white" />
+                        </Floating3DElement>
+                        <Floating3DElement delay={1} duration={8} className="-top-5 left-10 w-14 h-14 bg-blue-500 rounded-full rotate-45 backdrop-blur-md bg-opacity-90">
+                            <Activity size={24} className="text-white" />
+                        </Floating3DElement>
 
-                        {/* Floating Card Interface */}
-                        <div className="relative bg-white/60 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-2xl transform hover:scale-[1.02] transition-all duration-500">
-
-                            {/* Card Header */}
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="font-bold text-lg text-slate-800">Live Requests</h3>
-                                    <p className="text-sm text-slate-500">Real-time emergency feed</p>
-                                </div>
-                                <div className="p-2 bg-white rounded-lg shadow-sm animate-pulse">
-                                    <Activity size={20} className="text-brand-500" />
-                                </div>
-                            </div>
-
-                            {/* List Items */}
-                            <div className="space-y-4">
-                                {stats.recent_requests_list.length > 0 ? stats.recent_requests_list.map((item, i) => (
-                                    <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:border-brand-200 transition-all cursor-pointer group hover:shadow-md hover:-translate-x-1">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shadow-sm ${item.urgent ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-600'}`}>
-                                            {item.bg}
+                        {/* Interactive 3D Card */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8, rotateY: -30 }}
+                            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                            transition={{ duration: 1, type: "spring", bounce: 0.4, delay: 0.4 }}
+                            className="absolute inset-0 flex items-center justify-center z-10"
+                        >
+                            <TiltCard className="w-full max-w-sm mx-auto">
+                                <div className="bg-white/80 backdrop-blur-2xl border border-white/60 p-6 rounded-3xl shadow-2xl relative overflow-hidden h-full">
+                                    {/* Inner 3D elements require transformZ to pop out */}
+                                    <div
+                                        className="relative z-20 h-full flex flex-col"
+                                        style={{ transform: "translateZ(60px)", transformStyle: "preserve-3d" }}
+                                    >
+                                        <div className="flex justify-between items-center mb-6">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-slate-800">Live Requests</h3>
+                                                <p className="text-sm text-slate-500">Real-time emergency feed</p>
+                                            </div>
+                                            <div className="p-2 bg-white rounded-lg shadow-md animate-pulse border border-slate-100">
+                                                <Activity size={20} className="text-brand-500" />
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-slate-800 group-hover:text-brand-700 transition-colors truncate max-w-[180px]" title={item.loc}>{item.loc}</h4>
+
+                                        <div className="space-y-4 flex-1">
+                                            {stats.recent_requests_list.length > 0 ? stats.recent_requests_list.slice(0, 3).map((item, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.8 + (i * 0.1) }}
+                                                    className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
+                                                    style={{ transform: `translateZ(${40 - (i * 10)}px)` }}
+                                                >
+                                                    <div className={`w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center text-xl font-bold shadow-sm ${item.urgent ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'}`}>
+                                                        {item.bg}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-bold text-slate-800 truncate" title={item.loc}>{item.loc.split(',')[0]}</h4>
+                                                        {item.urgent && <span className="text-red-500 font-bold flex items-center gap-1 mt-0.5 text-[10px] uppercase tracking-wider"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> Critical</span>}
+                                                    </div>
+                                                    <ArrowRight size={16} className="text-slate-300" />
+                                                </motion.div>
+                                            )) : (
+                                                <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 space-y-3">
+                                                    <ShieldCheck size={32} className="text-green-500 opacity-50" />
+                                                    <p className="text-sm font-medium">No active emergencies.<br />Community is safe.</p>
+                                                </div>
+                                            )}
                                         </div>
-                                        {item.urgent && <span className="text-brand-600 font-bold flex items-center gap-1 text-xs"><span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></span> Critical</span>}
-                                        <button className="p-2 rounded-full bg-slate-50 text-slate-400 group-hover:bg-brand-600 group-hover:text-white transition-all transform group-hover:rotate-45">
-                                            <ArrowRight size={16} />
-                                        </button>
                                     </div>
-                                )) : (
-                                    <div className="text-center p-6 text-slate-500 text-sm border border-dashed border-slate-200 rounded-2xl">
-                                        No active emergencies right now.<br />The community is safe.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+
+                                    {/* Glowing orb inside card for depth */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-400/20 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 -z-10" style={{ transform: "translateZ(-20px)" }}></div>
+                                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2 -z-10" style={{ transform: "translateZ(-20px)" }}></div>
+                                </div>
+                            </TiltCard>
+                        </motion.div>
                     </div>
 
                 </div>
-            </header>
+            </motion.header>
 
             {/* STATS SECTION */}
             <section className="py-20 bg-slate-900 text-white">

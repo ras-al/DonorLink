@@ -15,6 +15,15 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         if hasattr(request.user, 'role') and request.user.role != 'admin':
             self.permission_denied(request, message='Only admins are allowed.')
 
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.role == 'admin':
+            return Response(
+                {'detail': 'Admin accounts cannot be deleted.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def penalize(self, request, pk=None):
         user = self.get_object()
