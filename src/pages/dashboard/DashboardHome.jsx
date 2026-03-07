@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import DonorHome from './home/DonorHome';
 import HospitalHome from './home/HospitalHome';
 import OrgHome from './home/OrgHome';
+import AdminHome from './home/AdminHome';
 
 const DashboardHome = () => {
     const { user } = useAuth();
@@ -13,6 +14,7 @@ const DashboardHome = () => {
         case 'donor': return <DonorHome />;
         case 'hospital': return <HospitalHome />;
         case 'organization': return <OrgHome />;
+        case 'admin': return <AdminHome />;
         default: return <DonorHome />;
     }
 };

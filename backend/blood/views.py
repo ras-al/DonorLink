@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import BloodRequest, BloodInventory, DonationLog
 from .serializers import BloodRequestSerializer, BloodInventorySerializer
 from camps.models import DonationCamp
-from users.models import DonorProfile
+from users.models import DonorProfile, Penalty, Blacklist, User
 from rest_framework.views import APIView
 
 class DashboardAnalyticsView(APIView):
@@ -26,6 +26,12 @@ class DashboardAnalyticsView(APIView):
             data['total_camps'] = camps.count()
             data['active_camps'] = camps.filter(status='active').count()
             data['expected_turnout'] = sum([c.expected_donors for c in camps])
+            
+        elif user.role == 'admin':
+            data['total_users'] = User.objects.count()
+            data['total_requests'] = BloodRequest.objects.count()
+            data['active_penalties'] = Penalty.objects.count()
+            data['blacklisted_users'] = Blacklist.objects.count()
             
         return Response(data, status=status.HTTP_200_OK)
 

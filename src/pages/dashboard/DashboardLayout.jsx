@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, History } from 'lucide-react';
+import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, History, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
@@ -39,6 +39,14 @@ const DashboardLayout = () => {
                 ...common,
                 { label: 'Camp Management', path: '/dashboard/camps', icon: Users },
                 { label: 'Donor Map', path: '/dashboard/find-donor', icon: Map },
+            ];
+        }
+
+        if (user.role === 'admin') {
+            return [
+                ...common,
+                { label: 'System Audit', path: '/dashboard/audit', icon: ShieldAlert },
+                { label: 'User Management', path: '/dashboard/users', icon: Users },
             ];
         }
 
