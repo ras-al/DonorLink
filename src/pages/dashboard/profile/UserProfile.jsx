@@ -1,147 +1,167 @@
-import { ShieldCheck, Activity, MapPin, Calendar, Award, Download, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Phone, MapPin, Shield, Edit2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from '../../../components/common/Button';
-import { useToast } from '../../../context/ToastContext'; // Optional: if you added the toast
+import Input from '../../../components/common/Input';
+import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 
 const UserProfile = () => {
-    const { addToast } = useToast(); // If you implemented the ToastProvider earlier
+    const { user } = useAuth();
+    const { addToast } = useToast();
 
-    const handleDownload = (hospitalName) => {
-        // In a real app, this would trigger a PDF generation
-        addToast(`Downloading certificate for ${hospitalName}...`, 'success');
+    const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [formData, setFormData] = useState({
+        phone: '',
+        address: '',
+        is_available: true,
+        trust_score: 0,
+        blood_group: ''
+    });
+
+    const fetchProfile = async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setFormData({
+                    phone: data.phone || '',
+                    address: data.address || '',
+                    is_available: data.is_available ?? true,
+                    trust_score: data.trust_score || 0,
+                    blood_group: data.blood_group || ''
+                });
+            }
+        } catch (error) {
+            addToast("Failed to load profile", "error");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const handleChange = (e) => {
+        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        setFormData({ ...formData, [e.target.name]: value });
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: formData.phone,
+                    address: formData.address,
+                    is_available: formData.is_available
+                })
+            });
+
+            if (response.ok) {
+                addToast("Profile updated successfully!", "success");
+                setIsEditing(false);
+            } else {
+                addToast("Failed to update profile", "error");
+            }
+        } catch (error) {
+            addToast("Network error", "error");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading) return <div className="p-8">Loading profile...</div>;
+
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-
-            {/* Header Profile Card */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-20 -mt-20"></div>
-
-                <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                    <div className="relative">
-                        <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover" />
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
-                            O+
-                        </div>
-                    </div>
-
-                    <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-slate-900">Alex Johnson</h1>
-                            <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full flex items-center gap-1 border border-green-200">
-                                <ShieldCheck size={14} /> Verified Donor
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
-                            <span className="flex items-center gap-1"><MapPin size={16} /> Kollam, Kerala</span>
-                            <span className="flex items-center gap-1"><Calendar size={16} /> Joined Oct 2025</span>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <Button variant="outline">Edit Profile</Button>
-                        <Button>Donate Now</Button>
-                    </div>
-                </div>
+        <div className="max-w-3xl mx-auto space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-slate-900">Your Profile</h1>
+                {!isEditing ? (
+                    <Button variant="outline" onClick={() => setIsEditing(true)}>
+                        <Edit2 size={16} className="mr-2" /> Edit Details
+                    </Button>
+                ) : (
+                    <Button onClick={handleSave} isLoading={isSaving}>Save Changes</Button>
+                )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center gap-6 mb-8 pb-8 border-b border-slate-100">
+                    <img src={user?.avatar || "https://ui-avatars.com/api/?name=" + user?.name} alt="Avatar" className="w-24 h-24 rounded-full border-4 border-slate-50" />
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">{user?.name}</h2>
+                        <p className="text-slate-500 capitalize">{user?.role}</p>
 
-                {/* LEFT: AI Trust & Stats */}
-                <div className="space-y-6">
-                    {/* AI Trust Score Widget */}
-                    <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden shadow-lg shadow-slate-900/20">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-2xl opacity-20 -mr-10 -mt-10"></div>
+                        {user?.role === 'donor' && (
+                            <div className="flex gap-3 mt-3">
+                                <span className="px-3 py-1 bg-brand-50 text-brand-700 rounded-lg text-sm font-bold border border-brand-100">
+                                    {formData.blood_group} Blood
+                                </span>
+                                <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-sm font-bold border border-amber-100 flex items-center gap-1">
+                                    <Shield size={14} /> Trust Score: {formData.trust_score}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                        <div className="flex items-center justify-between mb-6 relative z-10">
-                            <h3 className="font-bold text-slate-300 flex items-center gap-2">
-                                <Activity size={18} className="text-brand-400" /> AI Trust Score
-                            </h3>
-                            <ShieldCheck className="text-green-400" size={24} />
-                        </div>
-
-                        <div className="flex items-end gap-3 mb-2 relative z-10">
-                            <span className="text-5xl font-extrabold text-white">98<span className="text-2xl text-slate-400">%</span></span>
-                            <span className="text-green-400 text-sm font-bold mb-1 border border-green-400/30 bg-green-400/10 px-2 py-0.5 rounded">Excellent</span>
-                        </div>
-
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-4 relative z-10">
-                            <div className="bg-gradient-to-r from-brand-500 to-green-400 w-[98%] h-full"></div>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-3 font-medium relative z-10">Based on response rate, attendance, and health feedback.</p>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Input label="Email Address" value={user?.email} icon={Mail} disabled />
+                        <Input
+                            label="Phone Number"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            icon={Phone}
+                            disabled={!isEditing}
+                        />
                     </div>
 
-                    {/* Medical Eligibility */}
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                        <h3 className="font-bold text-slate-800 mb-4">Current Eligibility</h3>
-                        <div className="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
-                                <CheckCircle size={24} />
-                            </div>
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-slate-700">Full Address</label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                            <textarea
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                disabled={!isEditing}
+                                rows="2"
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none disabled:opacity-60 resize-none"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    {user?.role === 'donor' && (
+                        <div className={`mt-6 p-4 rounded-xl border flex items-center justify-between transition-colors ${formData.is_available ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
                             <div>
-                                <h4 className="font-bold text-green-800">Ready to Donate</h4>
-                                <p className="text-xs text-green-600 font-medium mt-0.5">Last donation was 4 months ago.</p>
+                                <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                                    {formData.is_available ? <CheckCircle2 size={18} className="text-green-600" /> : <AlertCircle size={18} className="text-slate-400" />}
+                                    Available for Emergencies
+                                </h4>
+                                <p className="text-sm text-slate-500 mt-0.5">Allow hospitals to ping you for urgent blood requests.</p>
                             </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_available" checked={formData.is_available} onChange={handleChange} disabled={!isEditing} className="sr-only peer" />
+                                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            </label>
                         </div>
-                    </div>
+                    )}
                 </div>
-
-                {/* RIGHT: Donation History with Certificates */}
-                <div className="md:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col h-full">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-slate-900">Donation Impact Log</h3>
-                        <Button variant="ghost" size="sm">Download All Data</Button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-                        {[
-                            { id: 1, hospital: 'City Medical Center', date: 'Oct 12, 2025', type: 'Emergency', status: 'Completed', pts: '+50' },
-                            { id: 2, hospital: 'TKM College Drive', date: 'Jun 05, 2025', type: 'Camp', status: 'Completed', pts: '+20' },
-                            { id: 3, hospital: 'Apollo Hospital', date: 'Jan 18, 2025', type: 'Emergency', status: 'Completed', pts: '+50' },
-                            { id: 4, hospital: 'General Hospital', date: 'Sep 02, 2024', type: 'Emergency', status: 'Missed', pts: '-15', missed: true },
-                        ].map((log) => (
-                            <div key={log.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 hover:border-brand-200 transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${log.missed ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-brand-50 text-brand-600 border border-brand-100'}`}>
-                                        {log.type === 'Emergency' ? <Activity size={20} /> : <Award size={20} />}
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-800">{log.hospital}</h4>
-                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                                            <span className="flex items-center gap-1"><Calendar size={12} /> {log.date}</span>
-                                            <span className="font-medium">• {log.type}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Points and Download Certificate Button */}
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right hidden sm:block">
-                                        <span className={`text-sm font-bold ${log.missed ? 'text-red-500' : 'text-green-600'}`}>
-                                            {log.pts} Trust Pts
-                                        </span>
-                                        <p className={`text-xs mt-1 font-medium ${log.missed ? 'text-red-400' : 'text-slate-400'}`}>{log.status}</p>
-                                    </div>
-
-                                    {/* THE CERTIFICATE DOWNLOAD BUTTON */}
-                                    {log.status === 'Completed' ? (
-                                        <button
-                                            onClick={() => handleDownload(log.hospital)}
-                                            className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-brand-600 hover:text-white text-slate-600 rounded-lg transition-colors group/btn shadow-sm"
-                                            title="Download Certificate"
-                                        >
-                                            <Download size={16} />
-                                            <span className="text-xs font-bold hidden md:block">Certificate</span>
-                                        </button>
-                                    ) : (
-                                        <div className="px-3 py-2 w-10"></div> // Placeholder for alignment
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
             </div>
         </div>
     );
