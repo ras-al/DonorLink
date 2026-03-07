@@ -3,20 +3,48 @@ import { User, Lock, Bell, Shield, Save, MapPin } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('profile');
     const { addToast } = useToast();
+    const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSave = (e) => {
+    const [formData, setFormData] = useState({
+        phone: user?.phone || '',
+        address: user?.address || '',
+        last_donation_date: user?.last_donation_date || '',
+        disease_conditions: user?.disease_conditions || ''
+    });
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSave = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            if (res.ok) {
+                addToast('Settings updated successfully!', 'success');
+            } else {
+                addToast('Failed to update settings.', 'error');
+            }
+        } catch (error) {
+            addToast('Network error.', 'error');
+        } finally {
             setIsLoading(false);
-            addToast('Settings updated successfully!', 'success');
-        }, 1000);
+        }
     };
 
     return (
@@ -41,8 +69,8 @@ const Settings = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${activeTab === tab.id
-                                    ? 'bg-brand-50 text-brand-700 shadow-sm'
-                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                ? 'bg-brand-50 text-brand-700 shadow-sm'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                 }`}
                         >
                             <tab.icon size={18} />
@@ -63,25 +91,32 @@ const Settings = () => {
                                     <p className="text-sm text-slate-500">Update your basic profile details.</p>
                                 </div>
 
-                                <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
-                                    <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-20 h-20 rounded-full border-4 border-slate-50 shadow-sm" />
-                                    <div>
-                                        <Button variant="outline" size="sm" type="button">Change Avatar</Button>
-                                        <p className="text-xs text-slate-400 mt-2">JPG, GIF or PNG. Max size of 2MB.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                    <Input label="Full Name" defaultValue={user?.name || ''} disabled className="bg-slate-100 cursor-not-allowed" />
+                                    <Input label="Email Address" type="email" defaultValue={user?.email || ''} disabled className="bg-slate-100 cursor-not-allowed" />
+                                    <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
+                                    {user?.role === 'donor' && (
+                                        <Input label="Blood Group" defaultValue={user?.blood_group || 'N/A'} disabled className="bg-slate-100 cursor-not-allowed" />
+                                    )}
+                                </div>
+
+                                {user?.role === 'donor' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pb-4 border-b border-slate-100">
+                                        <div className="space-y-1">
+                                            <label className="text-sm font-medium text-slate-700">Last Donation Date</label>
+                                            <input type="date" name="last_donation_date" value={formData.last_donation_date || ''} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-sm font-medium text-slate-700">Disease / Medical Conditions</label>
+                                            <input type="text" name="disease_conditions" value={formData.disease_conditions || ''} onChange={handleChange} placeholder="e.g. None" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Input label="Full Name" defaultValue="Alex Johnson" />
-                                    <Input label="Email Address" type="email" defaultValue="alex.j@example.com" />
-                                    <Input label="Phone Number" type="tel" defaultValue="+91 98765 43210" />
-                                    <Input label="Blood Group" defaultValue="O+" disabled className="bg-slate-100 cursor-not-allowed" />
-                                </div>
-
-                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                <div className="space-y-4 pt-4">
                                     <h4 className="font-semibold text-slate-800 flex items-center gap-2"><MapPin size={18} /> Location Setup</h4>
-                                    <p className="text-sm text-slate-500 mb-4">Your location is crucial for the AI to match you with nearby emergencies.</p>
-                                    <Input label="Primary Address" defaultValue="Kollam Beach Road, Kerala" />
+                                    <p className="text-sm text-slate-500 mb-4">Your location is crucial for matching with nearby emergencies.</p>
+                                    <Input label="Primary Address" name="address" value={formData.address} onChange={handleChange} />
                                     <div className="flex items-center gap-2">
                                         <input type="checkbox" id="gps" className="rounded text-brand-600 focus:ring-brand-500" defaultChecked />
                                         <label htmlFor="gps" className="text-sm text-slate-700">Allow background GPS tracking for live emergency matching</label>

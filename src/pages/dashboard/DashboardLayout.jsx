@@ -1,17 +1,15 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
-// IMPORT FIX: Added 'History' icon here
-import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, ChevronDown, History } from 'lucide-react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Map, Activity, Users, Settings, LogOut, Bell, Menu, User, History } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
 const DashboardLayout = () => {
     const location = useLocation();
-    const { user, login } = useAuth();
-    const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const { user, logout } = useAuth(); // Assume logout function exists in context
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Dynamic Navigation based on Role
-    // Dynamic Navigation based on Role
+    // Dynamic Navigation based on REAL Role
     const getNavItems = () => {
         const common = [
             { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
@@ -49,9 +47,15 @@ const DashboardLayout = () => {
 
     const navItems = getNavItems();
 
+    const handleLogout = () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        if (logout) logout();
+        navigate('/login');
+    };
+
     return (
         <div className="flex h-screen bg-slate-50">
-
             {/* MOBILE OVERLAY */}
             {isMobileMenuOpen && (
                 <div
@@ -74,7 +78,7 @@ const DashboardLayout = () => {
                         <NavLink
                             key={item.path}
                             to={item.path}
-                            end={item.path === '/dashboard'} // Exact match for root
+                            end={item.path === '/dashboard'}
                             className={({ isActive }) =>
                                 `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${isActive
                                     ? 'bg-brand-50 text-brand-700 shadow-sm'
@@ -96,7 +100,7 @@ const DashboardLayout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-slate-100">
-                    <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-medium text-red-600 hover:bg-red-50 transition-colors">
+                    <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-medium text-red-600 hover:bg-red-50 transition-colors">
                         <LogOut size={20} /> Sign Out
                     </button>
                 </div>
@@ -104,7 +108,6 @@ const DashboardLayout = () => {
 
             {/* MAIN CONTENT WRAPPER */}
             <div className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
-
                 {/* HEADER */}
                 <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
                     <div className="flex items-center gap-4 md:hidden">
@@ -117,40 +120,17 @@ const DashboardLayout = () => {
                     </h2>
 
                     <div className="flex items-center gap-6">
-
-                        {/* DEMO ROLE SWITCHER */}
-                        <div className="relative hidden md:block">
-                            <button
-                                onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-200"
-                            >
-                                Demo: {user?.role.toUpperCase()} <ChevronDown size={14} />
-                            </button>
-                            {isRoleMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden py-1 animate-in fade-in zoom-in-95">
-                                    {['donor', 'hospital', 'organization'].map(r => (
-                                        <button
-                                            key={r}
-                                            onClick={() => { login(r); setIsRoleMenuOpen(false); }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 capitalize"
-                                        >
-                                            Switch to {r}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
                         <NavLink to="/dashboard/notifications" className="relative p-2 text-slate-400 hover:text-brand-600 transition-colors">
                             <Bell size={22} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                         </NavLink>
+
                         <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
                             <div className="text-right hidden md:block">
-                                <p className="text-sm font-bold text-slate-700">{user?.name || 'Guest'}</p>
-                                <p className="text-xs text-slate-500 capitalize">{user?.role || 'Viewer'}</p>
+                                <p className="text-sm font-bold text-slate-700">{user?.name || 'User'}</p>
+                                <p className="text-xs text-slate-500 capitalize">{user?.role || 'Member'}</p>
                             </div>
-                            <img src={user?.avatar || "https://i.pravatar.cc/150?img=11"} alt="Profile" className="w-10 h-10 rounded-full border-2 border-brand-100 p-0.5" />
+                            {/* Dynamically generates an avatar based on the user's name */}
+                            <img src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=0f172a&color=fff`} alt="Profile" className="w-10 h-10 rounded-full border-2 border-slate-100" />
                         </div>
                     </div>
                 </header>

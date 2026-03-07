@@ -1,48 +1,58 @@
-
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    // Default to 'donor' for demo purposes
-    const [user, setUser] = useState({
-        name: 'Alex Johnson',
-        role: 'donor', // 'donor' | 'hospital' | 'organization' | 'admin'
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d',
-        trustScore: 85,
-    });
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const login = (role = 'donor') => {
-        const mockUsers = {
-            donor: {
-                name: 'Alex Johnson',
-                role: 'donor',
-                avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d',
-                trustScore: 85,
-            },
-            hospital: {
-                name: 'City General Hospital',
-                role: 'hospital',
-                avatar: null,
-                trustScore: 98,
-            },
-            organization: {
-                name: 'Red Cross Chapter',
-                role: 'organization',
-                avatar: null,
-                trustScore: 100,
+    useEffect(() => {
+        const initAuth = async () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUser({
+                            ...data,
+                            name: data.name || data.email.split('@')[0].toUpperCase(),
+                        });
+                    } else {
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                    }
+                } catch (e) {
+                    console.error("Auth init failed", e);
+                }
             }
+            setIsLoading(false);
         };
-        setUser(mockUsers[role]);
+        initAuth();
+    }, []);
+
+    const login = (userData) => {
+        setUser({
+            ...userData,
+            name: userData.name || userData.email.split('@')[0].toUpperCase(),
+        });
     };
 
     const logout = () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         setUser(null);
     };
 
     return (
         <AuthContext.Provider value={{ user, login, logout }}>
-            {children}
+            {!isLoading ? children : (
+                <div className="flex items-center justify-center min-h-screen bg-slate-50">
+                    <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                </div>
+            )}
         </AuthContext.Provider>
     );
 };

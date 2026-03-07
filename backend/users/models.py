@@ -33,6 +33,7 @@ class DonorProfile(models.Model):
     gender = models.CharField(max_length=10)
     trust_score = models.IntegerField(default=50)
     last_donation_date = models.DateField(null=True, blank=True)
+    disease_conditions = models.TextField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
 
     def __str__(self):

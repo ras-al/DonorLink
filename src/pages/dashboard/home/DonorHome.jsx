@@ -135,7 +135,7 @@ const DonorHome = () => {
                         <div className="absolute -right-6 -top-6 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-30"></div>
                         <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Shield size={20} className="text-brand-400" /> Trust Score</h3>
                         <div className="flex items-end gap-2">
-                            <span className="text-5xl font-black">98</span>
+                            <span className="text-5xl font-black">{user?.trust_score || 0}</span>
                             <span className="text-brand-200 mb-1 font-medium">/ 100</span>
                         </div>
                         <p className="text-xs text-slate-400 mt-4 leading-relaxed">Your high score means you are prioritized by our AI for critical matches.</p>
@@ -146,11 +146,11 @@ const DonorHome = () => {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Heart size={16} className="text-red-500" /> Total Donations</span>
-                                <span className="font-bold text-slate-900">4</span>
+                                <span className="font-bold text-slate-900">{user?.donations_count || 0}</span>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Clock size={16} className="text-brand-500" /> Last Donated</span>
-                                <span className="font-bold text-slate-900 text-sm">3 Mos Ago</span>
+                                <span className="font-bold text-slate-900 text-sm">Recently</span>
                             </div>
                         </div>
                     </div>

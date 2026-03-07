@@ -10,9 +10,6 @@ const Login = () => {
     const { login } = useAuth();
     const { addToast } = useToast();
 
-    // Note: The role switcher here is mostly for UX (showing the right placeholder).
-    // The actual role is determined by the backend upon successful login.
-    const [displayRole, setDisplayRole] = useState('donor');
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -58,8 +55,8 @@ const Login = () => {
                 if (userResponse.ok) {
                     const userData = await userResponse.json();
 
-                    // Update global auth state with the REAL role from the database
-                    login(userData.role);
+                    // Update global auth state with the REAL user object
+                    login(userData);
 
                     addToast('Logged in successfully!', 'success');
                     navigate('/dashboard');
@@ -108,23 +105,6 @@ const Login = () => {
                         <p className="text-slate-500 mt-2">Please enter your details to sign in.</p>
                     </div>
 
-                    <div className="bg-slate-100 p-1 rounded-xl flex">
-                        <button
-                            type="button"
-                            onClick={() => setDisplayRole('donor')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${displayRole === 'donor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            <Activity size={18} /> Donor
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setDisplayRole('hospital')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${displayRole === 'hospital' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            <Building2 size={18} /> Hospital / Org
-                        </button>
-                    </div>
-
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700">Email Address</label>
@@ -135,7 +115,7 @@ const Login = () => {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    placeholder={displayRole === 'donor' ? "alex@example.com" : "admin@hospital.com"}
+                                    placeholder="yourname@example.com"
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                                     required
                                 />

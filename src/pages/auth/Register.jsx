@@ -28,7 +28,9 @@ const Register = () => {
         phone: '',
         address: '',
         orgName: '',
-        registrationId: ''
+        registrationId: '',
+        lastDonationDate: '',
+        diseaseConditions: ''
     });
 
     // Handle input changes
@@ -39,6 +41,22 @@ const Register = () => {
 
     const handleNext = (e) => {
         e.preventDefault();
+
+        // Age validation
+        if (step === 2 && role === 'donor' && formData.dateOfBirth) {
+            const birthDate = new Date(formData.dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            if (age < 18) {
+                addToast('You must be at least 18 years old to register as a donor.', 'error');
+                return;
+            }
+        }
+
         setStep(step + 1);
     };
 
@@ -60,6 +78,13 @@ const Register = () => {
             payload.date_of_birth = formData.dateOfBirth;
             payload.weight = formData.weight;
             payload.gender = formData.gender;
+
+            if (formData.lastDonationDate) {
+                payload.last_donation_date = formData.lastDonationDate;
+            }
+            if (formData.diseaseConditions) {
+                payload.disease_conditions = formData.diseaseConditions;
+            }
         } else {
             payload.organization_name = formData.orgName;
             payload.registration_id = formData.registrationId;
@@ -77,9 +102,8 @@ const Register = () => {
             const data = await response.json();
 
             if (response.ok) {
-                addToast('Registration successful! Welcome to DonorLink.', 'success');
-                login(role); // Auto-login for demo purposes
-                navigate('/dashboard');
+                addToast('Registration successful! Please login to continue.', 'success');
+                navigate('/login');
             } else {
                 // Display the first error returned by Django
                 const errorMsg = typeof data === 'object' ? Object.values(data)[0] : data.error;
@@ -262,6 +286,23 @@ const Register = () => {
                                             <option value="female">Female</option>
                                             <option value="other">Other</option>
                                         </select>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-sm font-medium text-slate-700">Last Donation Date (Optional)</label>
+                                            <div className="relative">
+                                                <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                                <input type="date" name="lastDonationDate" value={formData.lastDonationDate} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-sm font-medium text-slate-700">Any disease? (If yes, specify)</label>
+                                            <div className="relative">
+                                                <Activity className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                                <input type="text" name="diseaseConditions" value={formData.diseaseConditions} onChange={handleChange} placeholder="e.g. None" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}

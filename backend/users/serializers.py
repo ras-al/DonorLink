@@ -18,6 +18,8 @@ class RegisterSerializer(serializers.Serializer):
     date_of_birth = serializers.DateField(required=False)
     weight = serializers.DecimalField(max_digits=5, decimal_places=2, required=False)
     gender = serializers.CharField(max_length=10, required=False)
+    last_donation_date = serializers.DateField(required=False, allow_null=True)
+    disease_conditions = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     
     # Institution Specific Fields
     organization_name = serializers.CharField(max_length=200, required=False)
@@ -44,12 +46,23 @@ class RegisterSerializer(serializers.Serializer):
 
         # 2. Create the linked Profile based on role
         if role == 'donor':
+            last_date = validated_data.get('last_donation_date')
+            is_avail = True
+            
+            if last_date:
+                from datetime import date
+                if (date.today() - last_date).days < 90:
+                    is_avail = False
+            
             DonorProfile.objects.create(
                 user=user,
                 blood_group=validated_data.get('blood_group'),
                 date_of_birth=validated_data.get('date_of_birth'),
                 weight=validated_data.get('weight'),
-                gender=validated_data.get('gender', 'other')
+                gender=validated_data.get('gender', 'other'),
+                last_donation_date=last_date,
+                disease_conditions=validated_data.get('disease_conditions', ''),
+                is_available=is_avail
             )
         elif role in ['hospital', 'organization']:
             InstitutionalProfile.objects.create(
