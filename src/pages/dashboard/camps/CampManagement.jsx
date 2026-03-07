@@ -21,7 +21,7 @@ const CampManagement = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/camps/list/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/camps/list/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -49,8 +49,8 @@ const CampManagement = () => {
         try {
             const token = localStorage.getItem('access_token');
             const url = editingId
-                ? `http://127.0.0.1:8000/api/camps/list/${editingId}/`
-                : 'http://127.0.0.1:8000/api/camps/list/';
+                ? `${import.meta.env.VITE_API_URL}/api/camps/list/${editingId}/`
+                : `${import.meta.env.VITE_API_URL}/api/camps/list/`;
 
             const method = editingId ? 'PATCH' : 'POST';
 
@@ -98,7 +98,7 @@ const CampManagement = () => {
 
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/camps/list/${id}/`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/camps/list/${id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

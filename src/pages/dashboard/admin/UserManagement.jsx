@@ -23,7 +23,7 @@ const UserManagement = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/admin/users/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/admin/users/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -44,7 +44,7 @@ const UserManagement = () => {
     const handleAction = async (userId, actionName) => {
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/auth/admin/users/${userId}/${actionName}/`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/admin/users/${userId}/${actionName}/`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason: `Admin triggered ${actionName}` })
@@ -64,7 +64,7 @@ const UserManagement = () => {
         if (!window.confirm(`Are you sure you want to permanently delete "${userName}"? This action cannot be undone.`)) return;
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/auth/admin/users/${userId}/`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/admin/users/${userId}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

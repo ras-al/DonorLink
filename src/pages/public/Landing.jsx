@@ -163,7 +163,7 @@ const Landing = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/blood/public-stats/');
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/public-stats/`);
                 if (res.ok) {
                     const data = await res.json();
                     setStats(data);

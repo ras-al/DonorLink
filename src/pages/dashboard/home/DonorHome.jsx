@@ -16,7 +16,7 @@ const DonorHome = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/blood/requests/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -39,7 +39,7 @@ const DonorHome = () => {
         setAcceptingId(requestId);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/blood/requests/${requestId}/accept/`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/${requestId}/accept/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

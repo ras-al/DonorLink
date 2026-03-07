@@ -24,7 +24,7 @@ const UserProfile = () => {
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -57,7 +57,7 @@ const UserProfile = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me/`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,

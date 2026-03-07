@@ -40,7 +40,7 @@ const AdminOverview = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch('http://127.0.0.1:8000/api/blood/admin-overview/', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/admin-overview/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {

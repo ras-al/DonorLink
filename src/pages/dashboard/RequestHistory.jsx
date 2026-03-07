@@ -40,7 +40,7 @@ const StatusDropdown = ({ requestId, currentStatus, onStatusChange }) => {
         setOpen(false);
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch(`http://127.0.0.1:8000/api/blood/requests/${requestId}/update_status/`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/${requestId}/update_status/`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -102,7 +102,7 @@ const RequestHistory = () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) return;
-            const response = await fetch('http://127.0.0.1:8000/api/blood/requests/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -133,7 +133,7 @@ const RequestHistory = () => {
         setReportingId(requestId);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/blood/requests/${requestId}/report_noshow/`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/${requestId}/report_noshow/`, {
                 method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

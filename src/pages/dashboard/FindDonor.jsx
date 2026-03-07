@@ -59,7 +59,7 @@ const FindDonor = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            let url = 'http://127.0.0.1:8000/api/auth/donors/';
+            let url = `${import.meta.env.VITE_API_URL}/api/auth/donors/`;
             if (selectedBloodGroup) {
                 url += `?blood_group=${encodeURIComponent(selectedBloodGroup)}`;
             }

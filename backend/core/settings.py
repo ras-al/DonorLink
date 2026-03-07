@@ -109,3 +109,46 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+import logging
+import sqlparse
+
+class PrettySQLFormatter(logging.Formatter):
+    def format(self, record):
+        sql = record.getMessage()
+        
+        # 1. Ignore annoying background Django queries (noise reduction)
+        if 'django_session' in sql or 'SAVEPOINT' in sql or 'django_admin' in sql:
+            return ""
+            
+        # 2. Make the SQL beautiful and indented
+        formatted_sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
+        
+        # 3. Print with dashed lines and Cyan color for easy reading!
+        return f"\n{'-'*60}\n\033[96m{formatted_sql}\033[0m\n{'-'*60}\n"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_true': {'()': 'django.utils.log.RequireDebugTrue'}
+    },
+    'formatters': {
+        'pretty_sql': {'()': PrettySQLFormatter}
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'pretty_sql',
+        }
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        }
+    }
+}

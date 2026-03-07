@@ -28,7 +28,7 @@ const Settings = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me/`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

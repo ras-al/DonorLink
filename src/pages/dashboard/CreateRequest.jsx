@@ -50,7 +50,7 @@ const CreateRequest = () => {
             };
 
             // 3. Send POST request to Django
-            const response = await fetch('http://127.0.0.1:8000/api/blood/requests/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/requests/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

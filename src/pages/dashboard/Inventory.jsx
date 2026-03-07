@@ -16,7 +16,7 @@ const Inventory = () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/blood/inventory/', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blood/inventory/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -48,8 +48,8 @@ const Inventory = () => {
         try {
             const token = localStorage.getItem('access_token');
             const url = item.isNew
-                ? 'http://127.0.0.1:8000/api/blood/inventory/' // POST for new
-                : `http://127.0.0.1:8000/api/blood/inventory/${item.id}/`; // PUT/PATCH for existing
+                ? `${import.meta.env.VITE_API_URL}/api/blood/inventory/` // POST for new
+                : `${import.meta.env.VITE_API_URL}/api/blood/inventory/${item.id}/`; // PUT/PATCH for existing
 
             const method = item.isNew ? 'POST' : 'PATCH';
 

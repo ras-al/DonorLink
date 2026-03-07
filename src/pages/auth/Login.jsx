@@ -27,7 +27,7 @@ const Login = () => {
 
         try {
             // 1. Get the JWT Tokens from Django
-            const loginResponse = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+            const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -44,7 +44,7 @@ const Login = () => {
                 localStorage.setItem('refresh_token', tokenData.refresh);
 
                 // 2. Fetch the User's Profile to get their actual Role
-                const userResponse = await fetch('http://127.0.0.1:8000/api/auth/me/', {
+                const userResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me/`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${tokenData.access}`,
