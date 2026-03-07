@@ -91,3 +91,52 @@ class BloodInventoryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(hospital=self.request.user)
+
+class SystemAuditLogsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from .models import AIAuditLog
+        from users.models import Penalty, Blacklist
+        
+        ai_logs = AIAuditLog.objects.order_by('-timestamp')[:50]
+        penalties = Penalty.objects.select_related('user').order_by('-created_at')[:50]
+        blacklists = Blacklist.objects.select_related('user').order_by('-blacklisted_on')[:50]
+        
+        feed = []
+        for log in ai_logs:
+            feed.append({
+                'id': f"ai-{log.id}",
+                'type': 'ai_audit',
+                'title': f"AI Matching for Request #{log.blood_request.id}",
+                'description': log.ai_decision_data.get('summary', 'AI matching completed.'),
+                'timestamp': log.timestamp,
+                'color': 'brand'
+            })
+            
+        for p in penalties:
+            feed.append({
+                'id': f"penalty-{p.id}",
+                'type': 'penalty',
+                'title': f"Penalty: {p.user.email}",
+                'description': f"-{p.points_deducted} pts: {p.reason}",
+                'timestamp': p.created_at,
+                'color': 'yellow'
+            })
+            
+        for b in blacklists:
+            feed.append({
+                'id': f"ban-{b.id}",
+                'type': 'blacklist',
+                'title': f"User Banned: {b.user.email}",
+                'description': b.reason,
+                'timestamp': b.blacklisted_on,
+                'color': 'red'
+            })
+            
+        # Sort feed descending
+        feed.sort(key=lambda x: x['timestamp'], reverse=True)
+        return Response(feed, status=status.HTTP_200_OK)

@@ -17,6 +17,8 @@ import Terms from './pages/public/Terms';
 import Privacy from './pages/public/Privacy';
 import { ToastProvider } from './context/ToastContext';
 import RequestHistory from './pages/dashboard/RequestHistory';
+import SystemAudit from './pages/dashboard/admin/SystemAudit';
+import UserManagement from './pages/dashboard/admin/UserManagement';
 
 function App() {
   return (
@@ -60,6 +62,10 @@ function AppContent() {
                 <Route path="profile" element={<UserProfile />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="settings" element={<Settings />} />
+
+                {/* NEW: Admin Routes */}
+                <Route path="audit" element={<SystemAudit />} />
+                <Route path="users" element={<UserManagement />} />
               </Route>
             </Routes>
           </motion.div>
