@@ -30,6 +30,11 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
+    def validate_registration_id(self, value):
+        if InstitutionalProfile.objects.filter(registration_id=value).exists():
+            raise serializers.ValidationError("An institution with this registration ID already exists.")
+        return value
+
     def validate_date_of_birth(self, value):
         from datetime import date
         if value:

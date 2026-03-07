@@ -8,6 +8,7 @@ from camps.models import DonationCamp
 from users.models import DonorProfile, Penalty, Blacklist, User
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from .ai_engine import DonorMatchEngine, TrustScoreEngine
 
 class PublicStatsView(APIView):
     permission_classes = [AllowAny]
@@ -79,7 +80,34 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
         return BloodRequest.objects.all().order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(hospital=self.request.user)
+        # 1. Save the new blood request
+        blood_request = serializer.save(hospital=self.request.user)
+
+        # 2. Trigger the AI Match Engine!
+        best_matches = DonorMatchEngine.get_best_matches(
+            blood_group=blood_request.blood_group,
+            hospital_location=blood_request.location,
+            urgency_level=blood_request.urgency_level
+        )
+
+        # 3. MVP Action: Log the AI's decisions to the console so we can see it working!
+        print("\n" + "="*50)
+        print(f"🚨 AI EMERGENCY PROTOCOL ACTIVATED 🚨")
+        print(f"Hospital: {self.request.user.username}")
+        print(f"Needed: {blood_request.blood_group} | Urgency: {blood_request.urgency_level}")
+        print("-" * 50)
+        if not best_matches:
+            print("❌ AI WARNING: No eligible donors found in the network!")
+        else:
+            print(f"✅ AI Identified Top {len(best_matches)} Donors:")
+            for rank, match in enumerate(best_matches, 1):
+                donor_name = match['donor_profile'].user.username
+                score = match['match_score']
+                print(f"  {rank}. {donor_name} | AI Score: {score}")
+        print("="*50 + "\n")
+        
+        # Note: In a full production app with a mobile app, this is exactly where you 
+        # would trigger Push Notifications or SMS messages strictly to these `best_matches`!
 
     # NEW: Custom endpoint for Donors to accept a request
     @action(detail=True, methods=['post'])
@@ -107,6 +135,39 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
         )
 
         return Response({'detail': 'Request accepted successfully!'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def report_noshow(self, request, pk=None):
+        blood_request = self.get_object()
+        
+        # Security: Only the hospital that created the request can report a no-show
+        if request.user.role != 'hospital' or blood_request.hospital != request.user:
+            return Response({'detail': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Find the specific donor who accepted this request
+        log = DonationLog.objects.filter(blood_request=blood_request, status='completed').first()
+        if not log:
+            return Response({'detail': 'No donor log found for this request.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # 1. Trigger the AI Penalty Engine! (Deduct 20 points)
+        donor_profile = log.donor.donor_profile
+        new_score = TrustScoreEngine.penalize_donor(
+            donor_profile=donor_profile, 
+            reason=f"Failed to arrive for Critical Request #{blood_request.id}",
+            points=20
+        )
+
+        # 2. Re-open the emergency request so the AI can match a new donor
+        blood_request.status = 'pending'
+        blood_request.save()
+        
+        # 3. Update the log to reflect the failure
+        log.status = 'no_show'
+        log.save()
+
+        return Response({
+            'detail': 'Donor penalized and added to audit log. Emergency request has been re-opened for new matches.'
+        }, status=status.HTTP_200_OK)
 
 class BloodInventoryViewSet(viewsets.ModelViewSet):
     serializer_class = BloodInventorySerializer
