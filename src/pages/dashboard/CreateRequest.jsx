@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertCircle, Clock, CheckCircle2, Search, MapPin, ChevronRight, User } from 'lucide-react';
 import Button from '../../components/common/Button';
+import LocationInput from '../../components/common/LocationInput';
 import { useToast } from '../../context/ToastContext';
 
 const CreateRequest = () => {
@@ -15,6 +16,7 @@ const CreateRequest = () => {
     const [patientName, setPatientName] = useState('');
     const [age, setAge] = useState('');
     const [admissionId, setAdmissionId] = useState('');
+    const [location, setLocation] = useState('');
     const [urgency, setUrgency] = useState('medium');
     const [bloodGroup, setBloodGroup] = useState('');
 
@@ -42,8 +44,8 @@ const CreateRequest = () => {
                 patient_name: patientName,
                 blood_group: bloodGroup,
                 urgency_level: urgency,
-                // For MVP, we auto-generate location and required date
-                location: "Current Hospital Location",
+                // Automatically generate required date, use inputted location
+                location: location || "Current Hospital Location",
                 required_date: new Date().toISOString()
             };
 
@@ -135,9 +137,18 @@ const CreateRequest = () => {
                                     <label className="text-sm font-medium text-slate-700">Age</label>
                                     <input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. 34" />
                                 </div>
-                                <div className="col-span-2 space-y-1">
+                                <div className="space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Hospital Admission ID</label>
                                     <input type="text" value={admissionId} onChange={(e) => setAdmissionId(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. HOSP-2026-889" />
+                                </div>
+                                <div className="space-y-1">
+                                    <LocationInput
+                                        label="Hospital Location"
+                                        name="location"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                        placeholder="e.g. Kozhikode"
+                                    />
                                 </div>
                             </div>
 

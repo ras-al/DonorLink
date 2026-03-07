@@ -59,6 +59,28 @@ const CountUp = ({ end, label }) => {
 
 const Landing = () => {
     const [showIntro, setShowIntro] = useState(true);
+    const [stats, setStats] = useState({
+        total_donors: 0,
+        verified_hospitals: 0,
+        lives_saved: 0,
+        active_camps: 0,
+        recent_requests_list: []
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/blood/public-stats/');
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error("Could not fetch public stats.");
+            }
+        };
+        fetchStats();
+    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => setShowIntro(false), 1200);
@@ -69,8 +91,8 @@ const Landing = () => {
         return (
             <div className="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center animate-fade-out-up delay-[800ms] pointer-events-none">
                 <div className="text-center">
-                    <div className="w-24 h-24 bg-brand-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-500/50 animate-bounce">
-                        <Droplets size={48} fill="currentColor" />
+                    <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-500/50 animate-bounce overflow-hidden bg-white">
+                        <img src="/logo.png" alt="DonorLink Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-4xl font-bold text-white tracking-tight animate-pulse">DonorLink</h1>
                     <p className="text-brand-200 mt-2 font-medium">Connecting Hearts, Saving Lives</p>
@@ -86,8 +108,8 @@ const Landing = () => {
             <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-brand-600 font-bold text-2xl tracking-tight">
-                        <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform hover:rotate-12 hover:scale-110">
-                            <Droplets size={24} fill="currentColor" />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform hover:rotate-12 hover:scale-110 overflow-hidden bg-white">
+                            <img src="/logo.png" alt="DonorLink Logo" className="w-full h-full object-cover" />
                         </div>
                         DonorLink
                     </div>
@@ -141,7 +163,11 @@ const Landing = () => {
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                                 </span>
-                                <GlitchText text="URGENT: O+ Donors needed in your area" />
+                                <GlitchText text={
+                                    stats.recent_requests_list.length > 0 && stats.recent_requests_list[0].urgent
+                                        ? `URGENT: ${stats.recent_requests_list[0].bg} Donors needed in ${stats.recent_requests_list[0].loc.split(',')[0].substring(0, 15)}...`
+                                        : "Join the community to save lives today"
+                                } />
                             </div>
                         </FadeIn>
 
@@ -169,14 +195,16 @@ const Landing = () => {
                             </Link>
                         </FadeIn>
 
-                        <div className="flex items-center gap-8 pt-8 border-t border-slate-100 text-slate-500">
-                            <div className="flex -space-x-4">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <img key={i} className="w-10 h-10 rounded-full border-4 border-white transition-transform hover:scale-125 hover:z-10" src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" />
-                                ))}
+                        {stats.total_donors > 0 && (
+                            <div className="flex items-center gap-8 pt-8 border-t border-slate-100 text-slate-500">
+                                <div className="flex -space-x-4">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <img key={i} className="w-10 h-10 rounded-full border-4 border-white transition-transform hover:scale-125 hover:z-10" src={`https://ui-avatars.com/api/?name=Donor+${i}&background=f8fafc&color=0f172a`} alt="" />
+                                    ))}
+                                </div>
+                                <p className="text-sm font-medium">Joined by <span className="text-slate-900 font-bold">{stats.total_donors.toLocaleString()}</span> heroes</p>
                             </div>
-                            <p className="text-sm font-medium">Joined by <span className="text-slate-900 font-bold">12,000+</span> heroes</p>
-                        </div>
+                        )}
                     </div>
 
                     {/* Right Visuals */}
@@ -201,27 +229,24 @@ const Landing = () => {
 
                             {/* List Items */}
                             <div className="space-y-4">
-                                {[
-                                    { bg: 'A+', loc: 'Apollo Hospital', dist: '0.8km', urgent: true },
-                                    { bg: 'O-', loc: 'City Medical Center', dist: '2.5km', urgent: true },
-                                    { bg: 'AB+', loc: 'General Ward', dist: '4.2km', urgent: false },
-                                ].map((item, i) => (
+                                {stats.recent_requests_list.length > 0 ? stats.recent_requests_list.map((item, i) => (
                                     <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:border-brand-200 transition-all cursor-pointer group hover:shadow-md hover:-translate-x-1">
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shadow-sm ${item.urgent ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-600'}`}>
                                             {item.bg}
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-bold text-slate-800 group-hover:text-brand-700 transition-colors">{item.loc}</h4>
-                                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                <span>{item.dist}</span>
-                                                {item.urgent && <span className="text-brand-600 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></span> Critical</span>}
-                                            </div>
+                                            <h4 className="font-bold text-slate-800 group-hover:text-brand-700 transition-colors truncate max-w-[180px]" title={item.loc}>{item.loc}</h4>
                                         </div>
+                                        {item.urgent && <span className="text-brand-600 font-bold flex items-center gap-1 text-xs"><span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></span> Critical</span>}
                                         <button className="p-2 rounded-full bg-slate-50 text-slate-400 group-hover:bg-brand-600 group-hover:text-white transition-all transform group-hover:rotate-45">
                                             <ArrowRight size={16} />
                                         </button>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="text-center p-6 text-slate-500 text-sm border border-dashed border-slate-200 rounded-2xl">
+                                        No active emergencies right now.<br />The community is safe.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -234,10 +259,10 @@ const Landing = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                         {[
-                            { val: 15000, label: 'Registered Donors' },
-                            { val: 850, label: 'Verified Hospitals' },
-                            { val: 3200, label: 'Lives Saved' },
-                            { val: 120, label: 'Active Camps' }
+                            { val: stats.total_donors, label: 'Registered Donors' },
+                            { val: stats.verified_hospitals, label: 'Verified Hospitals' },
+                            { val: stats.lives_saved, label: 'Lives Saved' },
+                            { val: stats.active_camps, label: 'Active Camps' }
                         ].map((stat, i) => (
                             <FadeIn key={i} delay={i * 0.1}>
                                 <CountUp end={stat.val} label={stat.label} />

@@ -30,6 +30,20 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
+    def validate_date_of_birth(self, value):
+        from datetime import date
+        if value:
+            today = date.today()
+            age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+            if age < 18:
+                raise serializers.ValidationError("Donors must be at least 18 years old.")
+        return value
+
+    def validate_weight(self, value):
+        if value is not None and value < 50:
+            raise serializers.ValidationError("Donors must weigh at least 50 kg.")
+        return value
+
     def create(self, validated_data):
         role = validated_data.get('role')
         email = validated_data.get('email')

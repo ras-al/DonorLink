@@ -28,6 +28,7 @@ const DashboardLayout = () => {
         if (user.role === 'hospital') {
             return [
                 ...common,
+                { label: 'Find Donors', path: '/dashboard/find-donor', icon: Map },
                 { label: 'Create Request', path: '/dashboard/requests/create', icon: Activity },
                 { label: 'Request Tracking', path: '/dashboard/requests', icon: History },
                 { label: 'Inventory', path: '/dashboard/inventory', icon: Activity },
@@ -76,7 +77,7 @@ const DashboardLayout = () => {
             <aside className={`flex flex-col w-64 bg-white border-r border-slate-200 h-full fixed left-0 top-0 z-30 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 h-20 flex items-center border-b border-slate-100">
                     <span className="text-xl font-bold text-brand-600 flex items-center gap-2">
-                        <span className="w-8 h-8 bg-brand-600 text-white rounded-lg flex items-center justify-center">DL</span>
+                        <img src="/logo.png" alt="DonorLink Logo" className="w-8 h-8 rounded-lg object-cover bg-white" />
                         DonorLink
                     </span>
                 </div>
@@ -120,7 +121,10 @@ const DashboardLayout = () => {
                 <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
                     <div className="flex items-center gap-4 md:hidden">
                         <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-500"><Menu size={24} /></button>
-                        <span className="font-bold text-lg text-slate-800">DonorLink</span>
+                        <div className="flex items-center gap-2 font-bold text-lg text-slate-800">
+                            <img src="/logo.png" alt="DonorLink Logo" className="w-6 h-6 rounded object-cover" />
+                            DonorLink
+                        </div>
                     </div>
 
                     <h2 className="hidden md:block text-xl font-semibold text-slate-800 capitalize">

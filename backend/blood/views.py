@@ -7,6 +7,34 @@ from .serializers import BloodRequestSerializer, BloodInventorySerializer
 from camps.models import DonationCamp
 from users.models import DonorProfile, Penalty, Blacklist, User
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+
+class PublicStatsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        data = {
+            'total_donors': DonorProfile.objects.count(),
+            'verified_hospitals': User.objects.filter(role='hospital').count(),
+            'lives_saved': DonationLog.objects.filter(status='completed').count() * 3, # Usually 1 donation saves up to 3 lives
+            'active_camps': DonationCamp.objects.filter(status='active').count(),
+            'recent_requests': BloodRequest.objects.filter(status='pending').order_by('-created_at')[:3].values(
+                'blood_group', 'hospital__institutional_profile__organization_name', 'hospital__address', 'urgency_level'
+            )
+        }
+        
+        # Format the requests nicely for the frontend
+        formatted_requests = []
+        for req in data['recent_requests']:
+            formatted_requests.append({
+                'bg': req['blood_group'],
+                'loc': req['hospital__institutional_profile__organization_name'] or 'Hospital',
+                'urgent': req['urgency_level'] == 'critical'
+            })
+            
+        data['recent_requests_list'] = formatted_requests
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class DashboardAnalyticsView(APIView):
     permission_classes = [IsAuthenticated]

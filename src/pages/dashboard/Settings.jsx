@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { User, Lock, Bell, Shield, Save, MapPin } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import LocationInput from '../../components/common/LocationInput';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -116,7 +117,7 @@ const Settings = () => {
                                 <div className="space-y-4 pt-4">
                                     <h4 className="font-semibold text-slate-800 flex items-center gap-2"><MapPin size={18} /> Location Setup</h4>
                                     <p className="text-sm text-slate-500 mb-4">Your location is crucial for matching with nearby emergencies.</p>
-                                    <Input label="Primary Address" name="address" value={formData.address} onChange={handleChange} />
+                                    <LocationInput label="Primary Address" name="address" value={formData.address} onChange={handleChange} />
                                     <div className="flex items-center gap-2">
                                         <input type="checkbox" id="gps" className="rounded text-brand-600 focus:ring-brand-500" defaultChecked />
                                         <label htmlFor="gps" className="text-sm text-slate-700">Allow background GPS tracking for live emergency matching</label>

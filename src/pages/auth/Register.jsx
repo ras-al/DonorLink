@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, User, Building2, ChevronLeft, Activity, Phone, MapPin, Calendar, Droplet, Weight, CheckCircle2, ChevronRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import LocationInput from '../../components/common/LocationInput';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -235,8 +236,8 @@ const Register = () => {
                             {/* STEP 1: CREDENTIALS */}
                             {step === 1 && (
                                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-                                    <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} icon={User} placeholder="John Doe" required />
-                                    <Input label="Email Address" type="email" name="email" value={formData.email} onChange={handleChange} icon={Mail} placeholder="john@example.com" required />
+                                    <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} icon={User} placeholder="Raoh" required />
+                                    <Input label="Email Address" type="email" name="email" value={formData.email} onChange={handleChange} icon={Mail} placeholder="raoh@example.com" required />
                                     <Input label="Password" type="password" name="password" value={formData.password} onChange={handleChange} icon={Lock} placeholder="••••••••" required />
                                 </div>
                             )}
@@ -267,7 +268,7 @@ const Register = () => {
                                             <label className="text-sm font-medium text-slate-700">Date of Birth</label>
                                             <div className="relative">
                                                 <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" required />
+                                                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-600" required />
                                             </div>
                                         </div>
                                         <div className="space-y-1">
@@ -311,13 +312,15 @@ const Register = () => {
                             {step === 3 && (
                                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
                                     <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="+91 98765 43210" required />
-                                    <div className="space-y-1">
-                                        <label className="text-sm font-medium text-slate-700">Address / City</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                            <textarea name="address" value={formData.address} onChange={handleChange} placeholder="e.g. 123 Main St, Kollam" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
-                                        </div>
-                                    </div>
+                                    <LocationInput
+                                        label="Address / City"
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 123 Main St, Kollam"
+                                        isTextArea={true}
+                                        required={true}
+                                    />
 
                                     <div className="flex items-start gap-2 pt-2">
                                         <input type="checkbox" className="mt-1 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300" required />
@@ -350,13 +353,15 @@ const Register = () => {
                             </div>
                             <Input label="Registration / License ID" name="registrationId" value={formData.registrationId} onChange={handleChange} icon={ShieldCheck} placeholder="Govt. Registration Number" required />
 
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium text-slate-700">Full Address</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-3.5 text-slate-400" size={18} />
-                                    <textarea name="address" value={formData.address} onChange={handleChange} placeholder="Complete institutional address" rows="2" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none" required></textarea>
-                                </div>
-                            </div>
+                            <LocationInput
+                                label="Full Address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                placeholder="Complete institutional address"
+                                isTextArea={true}
+                                required={true}
+                            />
 
                             <Input label="Create Password" name="password" value={formData.password} onChange={handleChange} type="password" icon={Lock} placeholder="••••••••" required />
 

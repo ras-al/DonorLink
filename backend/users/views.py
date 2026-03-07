@@ -59,7 +59,8 @@ class UserProfileView(APIView):
             if 'is_available' in data: 
                 profile.is_available = data['is_available']
             if 'last_donation_date' in data:
-                profile.last_donation_date = data['last_donation_date']
+                val = data['last_donation_date']
+                profile.last_donation_date = val if val else None
                 
                 # Check 3 month gap
                 if profile.last_donation_date:
@@ -103,10 +104,11 @@ class DonorListView(APIView):
             data.append({
                 'id': str(d.id),
                 'name': (d.first_name + ' ' + d.last_name).strip() or d.email.split('@')[0].capitalize(),
-                'type': profile.blood_group,
+                'blood_group': profile.blood_group,
                 'dist': 'Nearby', # Placeholder for MVP
-                'location': d.address or 'Unknown Location',
-                'trust': profile.trust_score,
+                'address': d.address or 'Location unknown',
+                'phone': d.phone or 'No phone provided',
+                'trust_score': profile.trust_score,
                 'status': 'Active' if profile.is_available else 'Away'
             })
             
