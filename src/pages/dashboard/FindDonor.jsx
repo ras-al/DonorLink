@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Filter, Star, Phone, Mail, Navigation } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useToast } from '../../context/ToastContext';
@@ -8,6 +8,15 @@ import { useAuth } from '../../context/AuthContext';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
+// CACHE: Prevents spamming the free API with dummy data
+const geocodeCache = {
+    'Trivandrum, Kerala': [8.5241, 76.9366],
+    'Kollam, Kerala': [8.8932, 76.6141],
+    'Ernakulam, Kerala': [9.9816, 76.2999],
+    'Kottayam, Kerala': [9.5916, 76.5222],
+    'Thrissur, Kerala': [10.5276, 76.2144],
+};
 
 // Create a custom marker icon so we don't rely on Leaflet's default image
 const customMarkerIcon = new L.divIcon({
@@ -71,19 +80,30 @@ const FindDonor = () => {
             if (response.ok) {
                 const data = await response.json();
 
-                // Use Nominatim API to geocode addresses
+                // UPDATED Geocode function: Checks cache BEFORE hitting the API
                 const geocodeAddress = async (address) => {
                     if (!address || address === 'Location unknown' || address === 'None') return null;
+
+                    // 1. Instant Return if in Cache!
+                    if (geocodeCache[address]) {
+                        return geocodeCache[address];
+                    }
+
+                    // 2. Only ping API if it is a brand new address we haven't seen yet
                     try {
-                        // Add a small delay to respect Nominatim's rate limits
-                        await new Promise(resolve => setTimeout(resolve, 300));
+                        await new Promise(resolve => setTimeout(resolve, 600)); // Strict 600ms delay
                         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                        if (!res.ok) throw new Error('API Rate Limited');
+
                         const geoData = await res.json();
                         if (geoData && geoData.length > 0) {
-                            return [parseFloat(geoData[0].lat), parseFloat(geoData[0].lon)];
+                            const coords = [parseFloat(geoData[0].lat), parseFloat(geoData[0].lon)];
+                            geocodeCache[address] = coords; // Save it so we never fetch it again
+                            return coords;
                         }
                     } catch (error) {
                         console.error("Geocoding failed for", address, error);
+                        return [10.8505, 76.2711]; // Safe fallback to middle of Kerala
                     }
                     return null;
                 };

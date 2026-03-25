@@ -27,8 +27,9 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
         }
 
         try {
-            // Use OpenStreetMap Nominatim API for geocoding
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+            // Use OpenStreetMap Nominatim API for geocoding with email and countrycodes to prevent blocks!
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in&email=demo@donorlink.app`);
+            if (!res.ok) throw new Error("Rate Limited");
             const data = await res.json();
 
             // Format the display names to be a bit cleaner
@@ -41,7 +42,7 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
             // Remove exact duplicates that might arise from truncation
             setSuggestions([...new Set(formattedSuggestions)]);
         } catch (error) {
-            console.error("Geocoding error:", error);
+            console.warn("Geocoding error:", error);
         } finally {
             setIsSearching(false);
         }
@@ -49,7 +50,9 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
 
     const handleInputChange = (e) => {
         const val = e.target.value;
-        onChange(e); // Propagate up immediately so the input updates
+
+        // CRITICAL FIX: Pass the raw native event (e) back up so Register.jsx can extract e.target.name
+        if (onChange) onChange(e);
 
         if (val.trim() && val.length > 2) {
             setIsOpen(true);
@@ -58,10 +61,10 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
             // Clear previous timer
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
-            // Debounce the API call to avoid spamming Nominatim
+            // Debounce the API call to avoid spamming Nominatim (Wait 1.2 seconds!)
             debounceTimer.current = setTimeout(() => {
                 fetchLocations(val);
-            }, 500);
+            }, 1200);
         } else {
             setSuggestions([]);
             setIsSearching(false);
@@ -70,13 +73,14 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
     };
 
     const handleSelect = (city) => {
+        // CRITICAL FIX: Create a synthetic event that mimics a real input event for Register.jsx
         const syntheticEvent = {
             target: {
                 name: name,
                 value: city
             }
         };
-        onChange(syntheticEvent);
+        if (onChange) onChange(syntheticEvent);
         setIsOpen(false);
     };
 
@@ -116,6 +120,10 @@ const LocationInput = ({ label, value, onChange, name = "address", placeholder =
                         className={inputClasses}
                         required={required}
                     />
+                )}
+
+                {isSearching && (
+                    <Loader2 className="absolute right-4 top-3.5 text-brand-500 animate-spin" size={18} />
                 )}
 
                 {isOpen && suggestions.length > 0 && (
