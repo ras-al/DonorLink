@@ -102,6 +102,11 @@ REST_FRAMEWORK = {
     ),
 }
 
+AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackend',               # 1. Try logging in with Email
+    'django.contrib.auth.backends.ModelBackend', # 2. Fallback to normal Username
+]
+
 from datetime import timedelta
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'email',
