@@ -131,7 +131,7 @@ const CreateRequest = () => {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Patient Name</label>
-                                    <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. John Doe" />
+                                    <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none" placeholder="e.g. Rasal Musthafa" />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-slate-700">Age</label>
